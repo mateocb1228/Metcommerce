@@ -1,0 +1,168 @@
+/* ===== RESET Y BASE ===== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+    background-color: #f9f9f9;
+}
+
+/* ===== NAVBAR ===== */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #1a1a2e;
+    padding: 15px 40px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.logo {
+    color: #e94560;
+    font-size: 24px;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.nav-links {
+    list-style: none;
+    display: flex;
+    gap: 30px;
+}
+
+.nav-links a {
+    color: #fff;
+    text-decoration: none;
+    font-size: 15px;
+    transition: color 0.3s;
+}
+
+.nav-links a:hover {
+    color: #e94560;
+}
+
+.carrito {
+    color: #fff;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+/* ===== HERO ===== */
+.hero {
+    background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+    color: #fff;
+    text-align: center;
+    padding: 100px 20px;
+}
+
+.hero h1 {
+    font-size: 48px;
+    margin-bottom: 15px;
+}
+
+.hero p {
+    font-size: 20px;
+    margin-bottom: 30px;
+    color: #a8a8b3;
+}
+
+.btn-principal {
+    background-color: #e94560;
+    color: #fff;
+    padding: 14px 35px;
+    border-radius: 30px;
+    text-decoration: none;
+    font-size: 16px;
+    transition: background 0.3s;
+}
+
+.btn-principal:hover {
+    background-color: #c73652;
+}
+
+/* ===== PRODUCTOS ===== */
+.productos {
+    padding: 60px 40px;
+    text-align: center;
+}
+
+.productos h2 {
+    font-size: 32px;
+    margin-bottom: 40px;
+    color: #1a1a2e;
+}
+
+.grid-productos {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 25px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.tarjeta {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    transition: transform 0.3s, box-shadow 0.3s;
+    text-align: left;
+}
+
+.tarjeta:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.tarjeta img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    background-color: #f0f0f0;
+}
+
+.tarjeta h3 {
+    font-size: 18px;
+    margin-bottom: 8px;
+    color: #1a1a2e;
+}
+
+.tarjeta .precio {
+    font-size: 20px;
+    font-weight: bold;
+    color: #e94560;
+    margin-bottom: 15px;
+}
+
+.tarjeta .btn-agregar {
+    width: 100%;
+    padding: 10px;
+    background-color: #1a1a2e;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.3s;
+}
+
+.tarjeta .btn-agregar:hover {
+    background-color: #e94560;
+}
+
+/* ===== FOOTER ===== */
+.footer {
+    background-color: #1a1a2e;
+    color: #a8a8b3;
+    text-align: center;
+    padding: 25px;
+    font-size: 14px;
+}
