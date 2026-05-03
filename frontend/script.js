@@ -1,66 +1,96 @@
-// ===== PRODUCTOS DE PRUEBA =====
-const productos = [
-    {
-        id: 1,
-        nombre: "Zapato Casual Hombre",
-        precio: 89900,
-        imagen: "https://via.placeholder.com/250x200?text=Zapato+Casual"
-    },
-    {
-        id: 2,
-        nombre: "Tenis Deportivo",
-        precio: 120000,
-        imagen: "https://via.placeholder.com/250x200?text=Tenis+Deportivo"
-    },
-    {
-        id: 3,
-        nombre: "Sandalia Mujer",
-        precio: 65000,
-        imagen: "https://via.placeholder.com/250x200?text=Sandalia+Mujer"
-    },
-    {
-        id: 4,
-        nombre: "Bota de Cuero",
-        precio: 195000,
-        imagen: "https://via.placeholder.com/250x200?text=Bota+Cuero"
-    }
-];
-
-// ===== CARRITO =====
+const API = 'http://localhost:3000/api';
 let carrito = [];
 
-// ===== MOSTRAR PRODUCTOS =====
-function mostrarProductos() {
+// ===== CARGAR PRODUCTOS DESDE LA API =====
+async function cargarProductos() {
+    const grid = document.getElementById('grid-productos');
+    grid.innerHTML = '<p class="msg-cargando">Cargando productos...</p>';
+
+    try {
+        const res = await fetch(`${API}/productos`);
+        if (!res.ok) throw new Error(`Error del servidor: ${res.status}`);
+        const productos = await res.json();
+        mostrarProductos(productos);
+    } catch (err) {
+        grid.innerHTML = `
+            <p class="msg-error">
+                No se pudo conectar al servidor.<br>
+                Asegúrate de que el backend está corriendo en <strong>localhost:3000</strong>.
+            </p>`;
+        console.error(err);
+    }
+}
+
+// ===== RENDERIZAR TARJETAS =====
+function mostrarProductos(productos) {
     const grid = document.getElementById('grid-productos');
     grid.innerHTML = '';
 
-    productos.forEach(producto => {
+    if (!productos.length) {
+        grid.innerHTML = '<p class="msg-cargando">No hay productos disponibles.</p>';
+        return;
+    }
+
+    productos.forEach(p => {
+        const agotado  = p.stock === 0;
+        const stockBajo = p.stock > 0 && p.stock <= 5;
+        const precio   = parseFloat(p.precio).toLocaleString('es-CO');
+
         const tarjeta = document.createElement('div');
         tarjeta.classList.add('tarjeta');
+        if (agotado) tarjeta.classList.add('sin-stock');
+
         tarjeta.innerHTML = `
-            <img src="${producto.imagen}" alt="${producto.nombre}">
-            <h3>${producto.nombre}</h3>
-            <p class="precio">$${producto.precio.toLocaleString('es-CO')}</p>
-            <button class="btn-agregar" onclick="agregarAlCarrito(${producto.id})">
-                Agregar al carrito
+            <img src="${p.imagen_url}" alt="${p.nombre}">
+            ${p.categoria ? `<span class="badge-categoria">${p.categoria}</span>` : ''}
+            <h3>${p.nombre}</h3>
+            ${p.descripcion ? `<p class="descripcion">${p.descripcion}</p>` : ''}
+            <p class="precio">$${precio}</p>
+            <p class="stock-info ${agotado ? 'agotado' : stockBajo ? 'stock-bajo' : ''}">
+                ${agotado ? '❌ Agotado' : stockBajo ? `⚠️ Últimas ${p.stock} unidades` : `✅ Disponible`}
+            </p>
+            <button
+                class="btn-agregar"
+                onclick="agregarAlCarrito(${p.id}, '${p.nombre.replace(/'/g, "\\'")}', ${p.precio})"
+                ${agotado ? 'disabled' : ''}
+            >
+                ${agotado ? 'Sin stock' : 'Agregar al carrito'}
             </button>
         `;
         grid.appendChild(tarjeta);
     });
 }
 
-// ===== AGREGAR AL CARRITO =====
-function agregarAlCarrito(id) {
-    const producto = productos.find(p => p.id === id);
-    carrito.push(producto);
+// ===== CARRITO (agrupa por producto) =====
+function agregarAlCarrito(id, nombre, precio) {
+    const existente = carrito.find(p => p.id === id);
+    if (existente) {
+        existente.cantidad++;
+    } else {
+        carrito.push({ id, nombre, precio: parseFloat(precio), cantidad: 1 });
+    }
     actualizarContador();
-    alert(`✅ ${producto.nombre} agregado al carrito`);
+    mostrarToast(`✅ ${nombre} agregado`);
 }
 
-// ===== ACTUALIZAR CONTADOR =====
 function actualizarContador() {
-    document.getElementById('contador-carrito').textContent = carrito.length;
+    const total = carrito.reduce((sum, p) => sum + p.cantidad, 0);
+    document.getElementById('contador-carrito').textContent = total;
 }
 
-// ===== INICIAR =====
-mostrarProductos();
+// ===== TOAST DE CONFIRMACIÓN =====
+function mostrarToast(mensaje) {
+    let toast = document.getElementById('toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toast';
+        document.body.appendChild(toast);
+    }
+    toast.textContent = mensaje;
+    toast.classList.add('visible');
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => toast.classList.remove('visible'), 2500);
+}
+
+// ===== INICIO =====
+cargarProductos();

@@ -158,6 +158,79 @@ body {
     background-color: #e94560;
 }
 
+/* ===== ESTADOS DE CARGA Y ERROR ===== */
+.msg-cargando, .msg-error {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 40px;
+    font-size: 16px;
+    color: #666;
+}
+.msg-error { color: #e94560; }
+
+/* ===== TARJETA: NUEVOS ELEMENTOS ===== */
+.badge-categoria {
+    display: inline-block;
+    background: #f0f0f0;
+    color: #555;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    margin-bottom: 8px;
+}
+
+.tarjeta .descripcion {
+    font-size: 13px;
+    color: #888;
+    margin-bottom: 10px;
+    line-height: 1.4;
+}
+
+.stock-info {
+    font-size: 12px;
+    margin-bottom: 12px;
+    color: #4caf50;
+}
+.stock-info.stock-bajo { color: #ff9800; }
+.stock-info.agotado    { color: #e94560; }
+
+.tarjeta.sin-stock {
+    opacity: 0.6;
+    filter: grayscale(40%);
+}
+
+.tarjeta .btn-agregar:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+.tarjeta .btn-agregar:disabled:hover {
+    background-color: #ccc;
+}
+
+/* ===== TOAST ===== */
+#toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #1a1a2e;
+    color: #fff;
+    padding: 12px 24px;
+    border-radius: 30px;
+    font-size: 14px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s, transform 0.3s;
+    z-index: 999;
+}
+#toast.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
 /* ===== FOOTER ===== */
 .footer {
     background-color: #1a1a2e;

@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(code *)",
+      "PowerShell(code *)",
+      "Bash(mysql *)",
+      "Read(//c/Program Files/**)",
+      "Read(//c/Program Files \\(x86\\)/**)",
+      "Read(//c/xampp/mysql/bin/**)",
+      "Read(//c/laragon/bin/**)",
+      "Bash(/c/xampp/mysql/bin/mysql.exe *)",
+      "Bash(npm install *)",
+      "Bash(node server.js)",
+      "Bash(curl -s http://localhost:3000/)",
+      "Bash(curl -s http://localhost:3000/api/productos)",
+      "Bash(curl *)",
+      "Bash(python3 -m json.tool --no-ensure-ascii)"
+    ]
+  }
+}
