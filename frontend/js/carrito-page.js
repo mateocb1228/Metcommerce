@@ -1,7 +1,16 @@
 const contenedor   = document.getElementById('contenedor-carrito');
 const bannerAvisos = document.getElementById('banner-avisos');
 
-let productosServidor = null; // null = aún no se pudo consultar la API
+const productosCache = {}; // id_producto -> detalle completo (con tallas), para validar stock
+
+async function obtenerProducto(id) {
+    if (productosCache[id]) return productosCache[id];
+    const res = await fetch(`${API}/productos/${id}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    productosCache[id] = data;
+    return data;
+}
 
 async function iniciar() {
     let carrito = obtenerCarrito();
@@ -11,15 +20,11 @@ async function iniciar() {
         return;
     }
 
-    // Revalida el carrito contra el stock real antes de mostrarlo: un producto
-    // pudo agotarse, eliminarse o cambiar de precio desde que se agregó.
+    // Revalida cada línea contra el stock real de esa talla: un producto pudo
+    // agotarse, eliminarse o cambiar de precio desde que se agregó al carrito.
     const avisos = [];
     try {
-        const res = await fetch(`${API}/productos`);
-        if (res.ok) {
-            productosServidor = await res.json();
-            carrito = revalidarCarrito(carrito, productosServidor, avisos);
-        }
+        carrito = await revalidarCarrito(carrito, avisos);
     } catch {
         // Sin conexión: se muestra el carrito guardado tal cual, sin bloquear al usuario.
     }
@@ -32,34 +37,41 @@ async function iniciar() {
     mostrarAvisos(avisos);
 }
 
-function revalidarCarrito(carrito, productos, avisos) {
+async function revalidarCarrito(carrito, avisos) {
     const actualizado = [];
     for (const item of carrito) {
-        const actual = productos.find(p => p.id === item.id);
+        const actual = await obtenerProducto(item.id);
         if (!actual) {
             avisos.push(`"${item.nombre}" ya no está disponible y se quitó del carrito.`);
             continue;
         }
-        if (actual.stock === 0) {
-            avisos.push(`"${item.nombre}" se agotó y se quitó del carrito.`);
+
+        let stockDisponible;
+        if (actual.tallas?.length && item.talla !== null && item.talla !== undefined) {
+            stockDisponible = actual.tallas.find(t => t.talla === item.talla)?.stock ?? 0;
+        } else {
+            stockDisponible = actual.stock ?? 0;
+        }
+
+        if (stockDisponible === 0) {
+            avisos.push(`"${item.nombre}"${item.talla ? ' talla ' + item.talla : ''} se agotó y se quitó del carrito.`);
             continue;
         }
+
         let cantidad = item.cantidad;
-        if (cantidad > actual.stock) {
-            avisos.push(`Solo quedan ${actual.stock} unidades de "${item.nombre}"; se ajustó la cantidad.`);
-            cantidad = actual.stock;
+        if (cantidad > stockDisponible) {
+            avisos.push(`Solo quedan ${stockDisponible} unidades de "${item.nombre}"${item.talla ? ' talla ' + item.talla : ''}; se ajustó la cantidad.`);
+            cantidad = stockDisponible;
         }
-        actualizado.push({ ...item, cantidad, precio: parseFloat(actual.precio), stockDisponible: actual.stock });
+
+        actualizado.push({ ...item, cantidad, precio: parseFloat(actual.precio), stockDisponible });
     }
     guardarCarrito(actualizado.map(({ stockDisponible, ...resto }) => resto));
     return actualizado;
 }
 
 function mostrarAvisos(avisos) {
-    if (!avisos.length) {
-        bannerAvisos.classList.remove('visible');
-        return;
-    }
+    if (!avisos.length) { bannerAvisos.classList.remove('visible'); return; }
     bannerAvisos.innerHTML = avisos.map(a => `⚠️ ${escapeHtml(a)}`).join('<br>');
     bannerAvisos.classList.add('visible');
 }
@@ -68,7 +80,7 @@ function renderizarVacio() {
     contenedor.innerHTML = `
         <div class="carrito-vacio">
             <p>Tu carrito está vacío.</p>
-            <a href="index.html">Ver catálogo</a>
+            <a href="catalogo.html">Ver catálogo</a>
         </div>
     `;
 }
@@ -97,55 +109,54 @@ function renderizarCarrito(carrito) {
 
     const lista = document.getElementById('lista-carrito');
     carrito.forEach(item => {
+        const clave = claveLinea(item);
         const stockMax = item.stockDisponible ?? Infinity;
+        const variante = [item.color, item.talla ? `Talla ${item.talla}` : null].filter(Boolean).join(' · ');
+
         const fila = document.createElement('div');
         fila.className = 'item-carrito';
         fila.innerHTML = `
             <img src="${escapeHtml(item.imagen_url || '')}" alt="${escapeHtml(item.nombre)}">
             <div class="item-info">
                 <h3>${escapeHtml(item.nombre)}</h3>
+                ${variante ? `<span class="variante">${escapeHtml(variante)}</span>` : ''}
                 <span class="precio-unit">${formatoMoneda(item.precio)} c/u</span>
             </div>
-            <div class="qty-stepper">
-                <button class="btn-restar" data-id="${item.id}">−</button>
+            <div class="qty-stepper mini">
+                <button class="btn-restar" data-clave="${escapeHtml(clave)}">−</button>
                 <span>${item.cantidad}</span>
-                <button class="btn-sumar" data-id="${item.id}" ${item.cantidad >= stockMax ? 'disabled' : ''}>+</button>
+                <button class="btn-sumar" data-clave="${escapeHtml(clave)}" ${item.cantidad >= stockMax ? 'disabled' : ''}>+</button>
             </div>
             <div class="item-subtotal">${formatoMoneda(item.precio * item.cantidad)}</div>
-            <button class="btn-quitar" data-id="${item.id}" title="Quitar producto">✕</button>
+            <button class="btn-quitar" data-clave="${escapeHtml(clave)}" title="Quitar producto">✕</button>
         `;
         lista.appendChild(fila);
     });
 
     lista.querySelectorAll('.btn-restar').forEach(btn =>
-        btn.addEventListener('click', () => cambiarCantidad(btn.dataset.id, -1)));
+        btn.addEventListener('click', () => cambiarCantidad(btn.dataset.clave, -1)));
     lista.querySelectorAll('.btn-sumar').forEach(btn =>
-        btn.addEventListener('click', () => cambiarCantidad(btn.dataset.id, 1)));
+        btn.addEventListener('click', () => cambiarCantidad(btn.dataset.clave, 1)));
     lista.querySelectorAll('.btn-quitar').forEach(btn =>
-        btn.addEventListener('click', () => {
-            eliminarDelCarrito(Number(btn.dataset.id));
-            iniciar();
-        }));
+        btn.addEventListener('click', () => { eliminarDelCarrito(btn.dataset.clave); iniciar(); }));
 
     document.getElementById('btn-ir-checkout').addEventListener('click', () => {
         window.location.href = 'checkout.html';
     });
     document.getElementById('btn-vaciar-carrito').addEventListener('click', () => {
-        if (confirm('¿Vaciar todo el carrito?')) {
-            vaciarCarrito();
-            iniciar();
-        }
+        if (confirm('¿Vaciar todo el carrito?')) { vaciarCarrito(); iniciar(); }
     });
 }
 
-function cambiarCantidad(idRaw, delta) {
-    const id = Number(idRaw);
+function cambiarCantidad(clave, delta) {
     const carrito = obtenerCarrito();
-    const item = carrito.find(p => p.id === id);
+    const item = carrito.find(p => claveLinea(p) === clave);
     if (!item) return;
 
-    const producto = productosServidor?.find(p => p.id === id);
-    const stockMax = producto ? producto.stock : Infinity;
+    const actual = productosCache[item.id];
+    const stockMax = actual?.tallas?.length
+        ? (actual.tallas.find(t => t.talla === item.talla)?.stock ?? Infinity)
+        : (actual?.stock ?? Infinity);
     const nuevaCantidad = item.cantidad + delta;
 
     if (nuevaCantidad > stockMax) {
@@ -153,7 +164,7 @@ function cambiarCantidad(idRaw, delta) {
         return;
     }
 
-    actualizarCantidadCarrito(id, nuevaCantidad);
+    actualizarCantidadCarrito(clave, nuevaCantidad);
     iniciar();
 }
 

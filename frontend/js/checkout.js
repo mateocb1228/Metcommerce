@@ -9,12 +9,18 @@ renderizarResumen();
 
 function renderizarResumen() {
     const contenedor = document.getElementById('resumen-items');
-    contenedor.innerHTML = carrito.map(item => `
+    contenedor.innerHTML = carrito.map(item => {
+        const variante = [item.color, item.talla ? `Talla ${item.talla}` : null].filter(Boolean).join(' · ');
+        return `
         <div class="resumen-mini-item">
-            <span>${escapeHtml(item.nombre)} × ${item.cantidad}</span>
+            <span class="resumen-mini-nombre">
+                ${escapeHtml(item.nombre)} × ${item.cantidad}
+                ${variante ? `<span class="variante">${escapeHtml(variante)}</span>` : ''}
+            </span>
             <span>${formatoMoneda(item.precio * item.cantidad)}</span>
         </div>
-    `).join('');
+    `;
+    }).join('');
     document.getElementById('resumen-total-valor').textContent = formatoMoneda(calcularTotalCarrito(carrito));
 }
 
@@ -84,7 +90,12 @@ form.addEventListener('submit', async (e) => {
         cliente_nombre: datos.nombre,
         cliente_telefono: datos.telefono,
         cliente_direccion: datos.direccion,
-        items: carrito.map(item => ({ id_producto: item.id, cantidad: item.cantidad }))
+        items: carrito.map(item => ({
+            id_producto: item.id,
+            cantidad: item.cantidad,
+            talla: item.talla ?? null,
+            color: item.color ?? null
+        }))
     };
 
     try {

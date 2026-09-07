@@ -3,47 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MetCommerce</title>
+    <title>MetCommerce — Zapatos para hombre y mujer</title>
     <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
 
-    <!-- NAVBAR -->
     <nav class="navbar">
-        <div class="logo">MetCommerce</div>
+        <a href="index.html" class="logo">MetCommerce</a>
         <ul class="nav-links">
-            <li><a href="#">Inicio</a></li>
-            <li><a href="#">Catálogo</a></li>
-            <li><a href="#">Contacto</a></li>
+            <li><a href="index.html" class="activo">Inicio</a></li>
+            <li><a href="catalogo.html?categoria=Hombre">Hombre</a></li>
+            <li><a href="catalogo.html?categoria=Mujer">Mujer</a></li>
         </ul>
         <a href="carrito.html" class="carrito">
             🛒 <span id="contador-carrito">0</span>
         </a>
     </nav>
 
-    <!-- HERO -->
     <section class="hero">
-        <div class="hero-contenido">
-            <h1>Bienvenido a MetCommerce</h1>
-            <p>La plataforma digital para tu negocio local</p>
-            <a href="#" class="btn-principal">Ver Catálogo</a>
+        <span class="hero-etiqueta">Nueva colección</span>
+        <h1>Zapatos que se sienten<br>tan bien como se ven</h1>
+        <p>Calzado para hombre y mujer, seleccionado por comodidad, estilo y calidad. Encuentra tu talla perfecta.</p>
+        <a href="catalogo.html" class="btn-principal">Ver catálogo completo</a>
+    </section>
+
+    <section class="categorias">
+        <div class="categorias-grid">
+            <a href="catalogo.html?categoria=Hombre" class="categoria-tile categoria-hombre">
+                <div class="categoria-marco"><img src="img/productos/sneaker-urbano-hombre--negro-a.svg" alt="Zapatos Hombre"></div>
+                <div class="categoria-overlay">
+                    <h3>Zapatos Hombre</h3>
+                    <span>Ver colección →</span>
+                </div>
+            </a>
+            <a href="catalogo.html?categoria=Mujer" class="categoria-tile categoria-mujer">
+                <div class="categoria-marco"><img src="img/productos/tacon-elegante-mujer--rojo-a.svg" alt="Zapatos Mujer"></div>
+                <div class="categoria-overlay">
+                    <h3>Zapatos Mujer</h3>
+                    <span>Ver colección →</span>
+                </div>
+            </a>
         </div>
     </section>
 
-    <!-- PRODUCTOS -->
-    <section class="productos">
-        <h2>Productos Destacados</h2>
+    <section class="seccion">
+        <div class="seccion-titulo">
+            <h2>Novedades</h2>
+            <a href="catalogo.html">Ver todo →</a>
+        </div>
         <div class="grid-productos" id="grid-productos">
-            <!-- Los productos se cargarán aquí -->
+            <p class="msg-cargando">Cargando productos...</p>
         </div>
     </section>
 
-    <!-- FOOTER -->
     <footer class="footer">
         <p>© 2025 MetCommerce — Digital Solutions for Local Business</p>
     </footer>
 
     <script src="js/carrito.js"></script>
-    <script src="script.js"></script>
+    <script src="js/productos-ui.js"></script>
+    <script src="js/index.js"></script>
 </body>
 </html>

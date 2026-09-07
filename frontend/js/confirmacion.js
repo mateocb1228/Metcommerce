@@ -54,12 +54,18 @@ function renderizarPedido(pedido) {
 
             <div class="detalle-pedido">
                 <h3>Productos</h3>
-                ${pedido.items.map(item => `
+                ${pedido.items.map(item => {
+                    const variante = [item.color, item.talla ? `Talla ${item.talla}` : null].filter(Boolean).join(' · ');
+                    return `
                     <div class="detalle-fila">
-                        <span>${escapeHtml(item.nombre)} × ${item.cantidad}</span>
+                        <span>
+                            ${escapeHtml(item.nombre)} × ${item.cantidad}
+                            ${variante ? `<span class="variante">${escapeHtml(variante)}</span>` : ''}
+                        </span>
                         <span>${formatoMoneda(item.precio_unitario * item.cantidad)}</span>
                     </div>
-                `).join('')}
+                `;
+                }).join('')}
                 <div class="resumen-total" style="margin-top: 10px;">
                     <span>Total</span>
                     <span>${formatoMoneda(pedido.total)}</span>

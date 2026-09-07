@@ -26,12 +26,17 @@ function validarPedido({ cliente_nombre, cliente_telefono, cliente_direccion, it
     if (!Array.isArray(items) || items.length === 0 || items.length > MAX_ITEMS) {
         errores.push(`El pedido debe tener entre 1 y ${MAX_ITEMS} productos.`);
     } else {
-        const idsValidos = items.every(item => Number.isInteger(item?.id_producto) && item.id_producto > 0);
-        const cantidadesValidas = items.every(item =>
-            Number.isInteger(item?.cantidad) && item.cantidad > 0 && item.cantidad <= MAX_CANTIDAD_POR_ITEM
-        );
-        if (!idsValidos || !cantidadesValidas) {
-            errores.push('Hay productos con cantidades inválidas en el pedido.');
+        const itemsValidos = items.every(item => {
+            const idValido = Number.isInteger(item?.id_producto) && item.id_producto > 0;
+            const cantidadValida = Number.isInteger(item?.cantidad) && item.cantidad > 0 && item.cantidad <= MAX_CANTIDAD_POR_ITEM;
+            const tallaValida = item?.talla === undefined || item.talla === null ||
+                (Number.isInteger(item.talla) && item.talla >= 30 && item.talla <= 50);
+            const colorValido = item?.color === undefined || item.color === null ||
+                (typeof item.color === 'string' && item.color.length <= 50);
+            return idValido && cantidadValida && tallaValida && colorValido;
+        });
+        if (!itemsValidos) {
+            errores.push('Hay productos con datos inválidos en el pedido.');
         }
     }
 
@@ -86,8 +91,8 @@ router.post('/', async (req, res) => {
         let total = 0;
         const itemsDetalle = [];
 
-        // SELECT ... FOR UPDATE bloquea la fila de inventario hasta el commit,
-        // para que dos compras simultáneas del mismo producto no lean el mismo
+        // SELECT ... FOR UPDATE bloquea la fila de stock hasta el commit, para
+        // que dos compras simultáneas del mismo producto/talla no lean el mismo
         // stock disponible y ambas lo den por válido (condición de carrera).
         for (const item of items) {
             const [[producto]] = await conn.query(
@@ -95,11 +100,35 @@ router.post('/', async (req, res) => {
             );
             if (!producto) throw new Error('Uno de los productos del pedido ya no está disponible.');
 
-            const [[inv]] = await conn.query(
-                'SELECT cantidad FROM inventario WHERE id_producto=? FOR UPDATE', [item.id_producto]
+            const [tallasProducto] = await conn.query(
+                'SELECT talla FROM producto_tallas WHERE id_producto=?', [item.id_producto]
             );
-            if (!inv || inv.cantidad < item.cantidad) {
-                throw new Error(`Stock insuficiente para "${producto.nombre}". Disponible: ${inv ? inv.cantidad : 0}.`);
+
+            if (tallasProducto.length) {
+                // Este producto maneja tallas: el stock real vive en producto_tallas,
+                // así que la talla es obligatoria y se descuenta esa fila puntual
+                // (comprar talla 40 no puede afectar la disponibilidad de la talla 42).
+                if (!Number.isInteger(item.talla)) {
+                    throw new Error(`Debes indicar una talla para "${producto.nombre}".`);
+                }
+                const [[fila]] = await conn.query(
+                    'SELECT stock FROM producto_tallas WHERE id_producto=? AND talla=? FOR UPDATE',
+                    [item.id_producto, item.talla]
+                );
+                if (!fila || fila.stock < item.cantidad) {
+                    throw new Error(`Stock insuficiente para "${producto.nombre}" talla ${item.talla}. Disponible: ${fila ? fila.stock : 0}.`);
+                }
+                await conn.query(
+                    'UPDATE producto_tallas SET stock = stock - ? WHERE id_producto=? AND talla=?',
+                    [item.cantidad, item.id_producto, item.talla]
+                );
+            } else {
+                const [[inv]] = await conn.query(
+                    'SELECT cantidad FROM inventario WHERE id_producto=? FOR UPDATE', [item.id_producto]
+                );
+                if (!inv || inv.cantidad < item.cantidad) {
+                    throw new Error(`Stock insuficiente para "${producto.nombre}". Disponible: ${inv ? inv.cantidad : 0}.`);
+                }
             }
 
             total += producto.precio * item.cantidad;
@@ -114,8 +143,8 @@ router.post('/', async (req, res) => {
 
         for (const item of itemsDetalle) {
             await conn.query(
-                'INSERT INTO detalle_pedidos (id_pedido, id_producto, cantidad, precio_unitario) VALUES (?, ?, ?, ?)',
-                [id_pedido, item.id_producto, item.cantidad, item.precio_unitario]
+                'INSERT INTO detalle_pedidos (id_pedido, id_producto, talla, color, cantidad, precio_unitario) VALUES (?, ?, ?, ?, ?, ?)',
+                [id_pedido, item.id_producto, item.talla ?? null, item.color ?? null, item.cantidad, item.precio_unitario]
             );
             await conn.query(
                 'UPDATE inventario SET cantidad = cantidad - ? WHERE id_producto=?',

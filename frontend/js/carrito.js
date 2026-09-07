@@ -1,8 +1,14 @@
-// Módulo compartido del carrito. Se carga en index.html, carrito.html,
-// checkout.html y confirmacion.html antes que el script propio de cada página.
+// Módulo compartido del carrito. Se carga en todas las páginas antes que
+// el script propio de cada una.
 
 const API = 'http://localhost:3000/api';
 const CARRITO_KEY = 'mc_carrito';
+
+// Cada línea del carrito es un producto+talla+color específico, no solo un
+// producto: el mismo zapato en dos tallas distintas son dos líneas.
+function claveLinea({ id, talla, color }) {
+    return `${id}__${talla}__${color}`;
+}
 
 // ===== PERSISTENCIA (localStorage → sobrevive a recargar la página) =====
 function obtenerCarrito() {
@@ -30,16 +36,17 @@ function vaciarCarrito() {
 }
 
 // ===== OPERACIONES SOBRE EL CARRITO =====
-// producto: { id, nombre, precio, imagen_url, stock }
+// producto: { id, nombre, precio, imagen_url, talla, color, stockDisponible }
 function agregarAlCarrito(producto, cantidad = 1) {
     const carrito = obtenerCarrito();
-    const existente = carrito.find(p => p.id === producto.id);
+    const clave = claveLinea(producto);
+    const existente = carrito.find(p => claveLinea(p) === clave);
     const cantidadActual = existente ? existente.cantidad : 0;
-    const stockDisponible = producto.stock ?? Infinity;
+    const stockDisponible = producto.stockDisponible ?? Infinity;
     const nuevaCantidad = Math.min(cantidadActual + cantidad, stockDisponible);
 
     if (nuevaCantidad <= cantidadActual) {
-        return { ok: false, mensaje: 'No hay más stock disponible de este producto.' };
+        return { ok: false, mensaje: 'No hay más stock disponible de esta talla.' };
     }
 
     if (existente) {
@@ -50,6 +57,8 @@ function agregarAlCarrito(producto, cantidad = 1) {
             nombre: producto.nombre,
             precio: parseFloat(producto.precio),
             imagen_url: producto.imagen_url || '',
+            talla: producto.talla,
+            color: producto.color,
             cantidad: nuevaCantidad
         });
     }
@@ -57,20 +66,20 @@ function agregarAlCarrito(producto, cantidad = 1) {
     return { ok: true, ajustado: nuevaCantidad < cantidadActual + cantidad };
 }
 
-function actualizarCantidadCarrito(id, cantidad) {
+function actualizarCantidadCarrito(clave, cantidad) {
     let carrito = obtenerCarrito();
     if (cantidad <= 0) {
-        carrito = carrito.filter(p => p.id !== id);
+        carrito = carrito.filter(p => claveLinea(p) !== clave);
     } else {
-        const item = carrito.find(p => p.id === id);
+        const item = carrito.find(p => claveLinea(p) === clave);
         if (item) item.cantidad = cantidad;
     }
     guardarCarrito(carrito);
     return carrito;
 }
 
-function eliminarDelCarrito(id) {
-    const carrito = obtenerCarrito().filter(p => p.id !== id);
+function eliminarDelCarrito(clave) {
+    const carrito = obtenerCarrito().filter(p => claveLinea(p) !== clave);
     guardarCarrito(carrito);
     return carrito;
 }
