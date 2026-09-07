@@ -1,5 +1,7 @@
 -- MetCommerce — Esquema de base de datos
--- Ejecutar en MySQL: mysql -u root -p < schema.sql
+-- Ejecutar en MySQL: mysql --default-character-set=utf8mb4 -u root -p < schema.sql
+-- (sin --default-character-set=utf8mb4 el cliente de mysql en Windows suele usar
+-- otra codificación por defecto y corrompe las tildes de los datos de prueba)
 
 CREATE DATABASE IF NOT EXISTS metcommerce
     CHARACTER SET utf8mb4
