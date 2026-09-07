@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finalizar compra — MetCommerce</title>
+    <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="index.html" class="logo">MetCommerce</a>
+        <ul class="nav-links">
+            <li><a href="index.html">Inicio</a></li>
+            <li><a href="index.html#grid-productos">Catálogo</a></li>
+        </ul>
+        <a href="carrito.html" class="carrito">
+            🛒 <span id="contador-carrito">0</span>
+        </a>
+    </nav>
+
+    <main class="pagina-contenido">
+        <a href="carrito.html" class="link-volver">← Volver al carrito</a>
+        <h1>Finalizar compra</h1>
+
+        <div class="banner banner-error" id="banner-error"></div>
+
+        <div class="checkout-layout">
+            <form class="form-checkout" id="form-checkout" novalidate>
+                <div class="campo">
+                    <label for="nombre">Nombre completo</label>
+                    <input type="text" id="nombre" autocomplete="name" maxlength="150">
+                    <p class="campo-error" id="error-nombre"></p>
+                </div>
+
+                <div class="campo">
+                    <label for="telefono">Teléfono</label>
+                    <input type="tel" id="telefono" autocomplete="tel" maxlength="20" placeholder="Ej: 3001234567">
+                    <p class="campo-error" id="error-telefono"></p>
+                </div>
+
+                <div class="campo">
+                    <label for="direccion">Dirección de entrega</label>
+                    <textarea id="direccion" rows="3" maxlength="255" placeholder="Calle, número, barrio, ciudad"></textarea>
+                    <p class="campo-error" id="error-direccion"></p>
+                </div>
+
+                <button type="submit" class="btn-checkout" id="btn-confirmar">Confirmar pedido</button>
+            </form>
+
+            <div class="resumen-pedido">
+                <h2>Tu pedido</h2>
+                <div id="resumen-items"></div>
+                <div class="resumen-total">
+                    <span>Total</span>
+                    <span id="resumen-total-valor">$0</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>© 2025 MetCommerce — Digital Solutions for Local Business</p>
+    </footer>
+
+    <script src="js/carrito.js"></script>
+    <script src="js/checkout.js"></script>
+</body>
+</html>

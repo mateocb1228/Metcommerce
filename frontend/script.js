@@ -1,5 +1,4 @@
-const API = 'http://localhost:3000/api';
-let carrito = [];
+let productosCache = [];
 
 // ===== CARGAR PRODUCTOS DESDE LA API =====
 async function cargarProductos() {
@@ -9,8 +8,8 @@ async function cargarProductos() {
     try {
         const res = await fetch(`${API}/productos`);
         if (!res.ok) throw new Error(`Error del servidor: ${res.status}`);
-        const productos = await res.json();
-        mostrarProductos(productos);
+        productosCache = await res.json();
+        mostrarProductos(productosCache);
     } catch (err) {
         grid.innerHTML = `
             <p class="msg-error">
@@ -41,55 +40,44 @@ function mostrarProductos(productos) {
         if (agotado) tarjeta.classList.add('sin-stock');
 
         tarjeta.innerHTML = `
-            <img src="${p.imagen_url}" alt="${p.nombre}">
-            ${p.categoria ? `<span class="badge-categoria">${p.categoria}</span>` : ''}
-            <h3>${p.nombre}</h3>
-            ${p.descripcion ? `<p class="descripcion">${p.descripcion}</p>` : ''}
+            <img src="${escapeHtml(p.imagen_url || '')}" alt="${escapeHtml(p.nombre)}">
+            ${p.categoria ? `<span class="badge-categoria">${escapeHtml(p.categoria)}</span>` : ''}
+            <h3>${escapeHtml(p.nombre)}</h3>
+            ${p.descripcion ? `<p class="descripcion">${escapeHtml(p.descripcion)}</p>` : ''}
             <p class="precio">$${precio}</p>
             <p class="stock-info ${agotado ? 'agotado' : stockBajo ? 'stock-bajo' : ''}">
                 ${agotado ? '❌ Agotado' : stockBajo ? `⚠️ Últimas ${p.stock} unidades` : `✅ Disponible`}
             </p>
-            <button
-                class="btn-agregar"
-                onclick="agregarAlCarrito(${p.id}, '${p.nombre.replace(/'/g, "\\'")}', ${p.precio})"
-                ${agotado ? 'disabled' : ''}
-            >
+            <button class="btn-agregar" data-id="${p.id}" ${agotado ? 'disabled' : ''}>
                 ${agotado ? 'Sin stock' : 'Agregar al carrito'}
             </button>
         `;
         grid.appendChild(tarjeta);
     });
+
+    grid.querySelectorAll('.btn-agregar').forEach(btn => {
+        btn.addEventListener('click', () => manejarAgregarAlCarrito(btn.dataset.id));
+    });
 }
 
-// ===== CARRITO (agrupa por producto) =====
-function agregarAlCarrito(id, nombre, precio) {
-    const existente = carrito.find(p => p.id === id);
-    if (existente) {
-        existente.cantidad++;
+// ===== AGREGAR AL CARRITO (delega en carrito.js, que persiste en localStorage) =====
+function manejarAgregarAlCarrito(id) {
+    const producto = productosCache.find(p => String(p.id) === String(id));
+    if (!producto) return;
+
+    const resultado = agregarAlCarrito({
+        id: producto.id,
+        nombre: producto.nombre,
+        precio: producto.precio,
+        imagen_url: producto.imagen_url,
+        stock: producto.stock
+    }, 1);
+
+    if (resultado.ok) {
+        mostrarToast(`✅ ${producto.nombre} agregado`);
     } else {
-        carrito.push({ id, nombre, precio: parseFloat(precio), cantidad: 1 });
+        mostrarToast(`⚠️ ${resultado.mensaje}`, true);
     }
-    actualizarContador();
-    mostrarToast(`✅ ${nombre} agregado`);
-}
-
-function actualizarContador() {
-    const total = carrito.reduce((sum, p) => sum + p.cantidad, 0);
-    document.getElementById('contador-carrito').textContent = total;
-}
-
-// ===== TOAST DE CONFIRMACIÓN =====
-function mostrarToast(mensaje) {
-    let toast = document.getElementById('toast');
-    if (!toast) {
-        toast = document.createElement('div');
-        toast.id = 'toast';
-        document.body.appendChild(toast);
-    }
-    toast.textContent = mensaje;
-    toast.classList.add('visible');
-    clearTimeout(toast._timer);
-    toast._timer = setTimeout(() => toast.classList.remove('visible'), 2500);
 }
 
 // ===== INICIO =====

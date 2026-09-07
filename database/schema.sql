@@ -37,6 +37,7 @@ CREATE TABLE pedidos (
     id                INT AUTO_INCREMENT PRIMARY KEY,
     cliente_nombre    VARCHAR(200)  NOT NULL,
     cliente_telefono  VARCHAR(20),
+    cliente_direccion VARCHAR(255),
     total             DECIMAL(12,2) NOT NULL,
     estado            ENUM('pendiente','confirmado','enviado','entregado','cancelado') DEFAULT 'pendiente',
     fecha_creacion    TIMESTAMP DEFAULT CURRENT_TIMESTAMP

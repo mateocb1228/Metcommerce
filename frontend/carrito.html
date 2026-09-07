@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tu carrito — MetCommerce</title>
+    <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="index.html" class="logo">MetCommerce</a>
+        <ul class="nav-links">
+            <li><a href="index.html">Inicio</a></li>
+            <li><a href="index.html#grid-productos">Catálogo</a></li>
+        </ul>
+        <a href="carrito.html" class="carrito">
+            🛒 <span id="contador-carrito">0</span>
+        </a>
+    </nav>
+
+    <main class="pagina-contenido">
+        <h1>Tu carrito</h1>
+
+        <div class="banner banner-info" id="banner-avisos"></div>
+
+        <div id="contenedor-carrito">
+            <p class="msg-cargando">Cargando carrito...</p>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>© 2025 MetCommerce — Digital Solutions for Local Business</p>
+    </footer>
+
+    <script src="js/carrito.js"></script>
+    <script src="js/carrito-page.js"></script>
+</body>
+</html>
