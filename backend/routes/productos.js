@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const db     = require('../config/db');
+const { requireAuth } = require('../middleware/auth');
 
 // GET /api/productos
 router.get('/', async (req, res) => {
@@ -36,7 +37,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/productos
-router.post('/', async (req, res) => {
+router.post('/', requireAuth, async (req, res) => {
     const { nombre, descripcion, precio, imagen_url, id_categoria, stock_inicial = 0 } = req.body;
     if (!nombre || precio === undefined) {
         return res.status(400).json({ error: 'nombre y precio son requeridos' });
@@ -63,7 +64,7 @@ router.post('/', async (req, res) => {
 });
 
 // PUT /api/productos/:id
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireAuth, async (req, res) => {
     const { nombre, descripcion, precio, imagen_url, id_categoria } = req.body;
     try {
         const [result] = await db.query(
@@ -78,7 +79,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // DELETE /api/productos/:id  (soft delete — no borra de la BD)
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAuth, async (req, res) => {
     try {
         const [result] = await db.query(
             'UPDATE productos SET activo=0 WHERE id=?', [req.params.id]

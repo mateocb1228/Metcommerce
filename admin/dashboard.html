@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — MetCommerce Admin</title>
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+    <div class="admin-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo">Met<span>Commerce</span></div>
+            <ul class="sidebar-nav">
+                <li><a href="dashboard.html" class="activo">📊 Dashboard</a></li>
+                <li><a href="productos.html">📦 Productos</a></li>
+            </ul>
+            <div class="sidebar-footer">
+                <button class="btn-logout" id="btn-logout">Cerrar sesión</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="topbar">
+                <h1>Dashboard</h1>
+                <div class="usuario-info">Hola, <strong id="nombre-usuario">—</strong></div>
+            </div>
+
+            <div class="stats-grid" id="stats-grid">
+                <p class="msg-cargando">Cargando resumen...</p>
+            </div>
+
+            <div class="paneles-dobles">
+                <section class="panel">
+                    <h2>Últimos pedidos</h2>
+                    <div id="tabla-pedidos"><p class="msg-cargando">Cargando...</p></div>
+                </section>
+
+                <section class="panel">
+                    <h2>Alertas de stock bajo</h2>
+                    <div id="tabla-stock"><p class="msg-cargando">Cargando...</p></div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>

@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const db     = require('../config/db');
+const { requireAuth } = require('../middleware/auth');
 
 // GET /api/pedidos
 router.get('/', async (req, res) => {
@@ -92,7 +93,7 @@ router.post('/', async (req, res) => {
 });
 
 // PUT /api/pedidos/:id/estado
-router.put('/:id/estado', async (req, res) => {
+router.put('/:id/estado', requireAuth, async (req, res) => {
     const { estado } = req.body;
     const validos = ['pendiente', 'confirmado', 'enviado', 'entregado', 'cancelado'];
     if (!validos.includes(estado)) {

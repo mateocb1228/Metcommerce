@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const db     = require('../config/db');
+const { requireAuth } = require('../middleware/auth');
 
 // GET /api/inventario  (todo el inventario, alertas primero)
 router.get('/', async (req, res) => {
@@ -52,7 +53,7 @@ router.get('/:id_producto', async (req, res) => {
 
 // PUT /api/inventario/:id_producto
 // Body: { cantidad, stock_minimo? }
-router.put('/:id_producto', async (req, res) => {
+router.put('/:id_producto', requireAuth, async (req, res) => {
     const { cantidad, stock_minimo } = req.body;
     if (cantidad === undefined) return res.status(400).json({ error: 'cantidad es requerida' });
 
