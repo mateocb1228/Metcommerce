@@ -76,3 +76,24 @@ function formatoMoneda(valor) {
 function formatoFecha(fechaISO) {
     return new Date(fechaISO).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
 }
+
+// Los valores son los que maneja la base de datos (ENUM de la tabla pedidos);
+// las etiquetas son las que se muestran en el panel. "confirmado" se etiqueta
+// como "En proceso" para no tener que migrar el ENUM existente.
+const ESTADOS_PEDIDO = [
+    { valor: 'pendiente',  etiqueta: 'Pendiente' },
+    { valor: 'confirmado', etiqueta: 'En proceso' },
+    { valor: 'enviado',    etiqueta: 'Enviado' },
+    { valor: 'entregado',  etiqueta: 'Entregado' },
+    { valor: 'cancelado',  etiqueta: 'Cancelado' }
+];
+
+function etiquetaEstadoPedido(valor) {
+    return ESTADOS_PEDIDO.find(e => e.valor === valor)?.etiqueta || valor;
+}
+
+function escapeHtml(texto) {
+    const div = document.createElement('div');
+    div.textContent = texto ?? '';
+    return div.innerHTML;
+}

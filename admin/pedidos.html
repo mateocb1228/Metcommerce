@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pedidos — MetCommerce Admin</title>
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+    <div class="admin-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo">Met<span>Commerce</span></div>
+            <ul class="sidebar-nav">
+                <li><a href="dashboard.html">📊 Dashboard</a></li>
+                <li><a href="productos.html">📦 Productos</a></li>
+                <li><a href="pedidos.html" class="activo">🛒 Pedidos</a></li>
+            </ul>
+            <div class="sidebar-footer">
+                <button class="btn-logout" id="btn-logout">Cerrar sesión</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="topbar">
+                <h1>Pedidos</h1>
+                <div class="usuario-info">Hola, <strong id="nombre-usuario">—</strong></div>
+            </div>
+
+            <section class="panel">
+                <form id="form-filtros" class="filtros-bar">
+                    <div class="campo campo-filtro">
+                        <label for="filtro-estado">Estado</label>
+                        <select id="filtro-estado">
+                            <option value="">Todos</option>
+                            <option value="pendiente">Pendiente</option>
+                            <option value="confirmado">En proceso</option>
+                            <option value="enviado">Enviado</option>
+                            <option value="entregado">Entregado</option>
+                            <option value="cancelado">Cancelado</option>
+                        </select>
+                    </div>
+                    <div class="campo campo-filtro">
+                        <label for="filtro-desde">Desde</label>
+                        <input type="date" id="filtro-desde">
+                    </div>
+                    <div class="campo campo-filtro">
+                        <label for="filtro-hasta">Hasta</label>
+                        <input type="date" id="filtro-hasta">
+                    </div>
+                    <div class="campo campo-filtro campo-filtro-busqueda">
+                        <label for="filtro-busqueda">Cliente o teléfono</label>
+                        <input type="search" id="filtro-busqueda" placeholder="Buscar por nombre o teléfono...">
+                    </div>
+                    <div class="filtros-acciones">
+                        <button type="submit" class="btn btn-guardar">Filtrar</button>
+                        <button type="button" class="btn btn-cancelar" id="btn-limpiar-filtros">Limpiar</button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="panel">
+                <div id="tabla-pedidos-lista"><p class="msg-cargando">Cargando pedidos...</p></div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MODAL: Detalle de pedido -->
+    <div class="modal-overlay" id="modal-overlay" hidden>
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h2 id="modal-titulo">Pedido</h2>
+                <button class="btn-cerrar-modal" id="btn-cerrar-modal">✕</button>
+            </div>
+
+            <div id="modal-contenido">
+                <p class="msg-cargando">Cargando detalle...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/pedidos.js"></script>
+</body>
+</html>

@@ -44,9 +44,9 @@ async function cargarResumen() {
                 <tbody>
                     ${r.ultimos_pedidos.map(p => `
                         <tr>
-                            <td>${p.cliente_nombre}</td>
+                            <td>${escapeHtml(p.cliente_nombre)}</td>
                             <td>${formatoMoneda(p.total)}</td>
-                            <td><span class="badge badge-estado-${p.estado}">${p.estado}</span></td>
+                            <td><span class="badge badge-estado-${p.estado}">${etiquetaEstadoPedido(p.estado)}</span></td>
                             <td>${formatoFecha(p.fecha_creacion)}</td>
                         </tr>
                     `).join('')}

@@ -43,11 +43,59 @@ function validarPedido({ cliente_nombre, cliente_telefono, cliente_direccion, it
     return errores;
 }
 
-// GET /api/pedidos
-router.get('/', async (req, res) => {
+const ESTADOS_VALIDOS = ['pendiente', 'confirmado', 'enviado', 'entregado', 'cancelado'];
+const REGEX_FECHA = /^\d{4}-\d{2}-\d{2}$/;
+
+// No basta con el formato: "2026-13-40" cumple la regex pero no es una fecha
+// real, y MySQL no la rechaza igual que a un ENUM inválido (según el modo
+// estricto puede normalizarla en vez de dar error), así que se valida aquí.
+function fechaValida(str) {
+    if (!REGEX_FECHA.test(str)) return false;
+    const [anio, mes, dia] = str.split('-').map(Number);
+    const fecha = new Date(Date.UTC(anio, mes - 1, dia));
+    return fecha.getUTCFullYear() === anio && fecha.getUTCMonth() === mes - 1 && fecha.getUTCDate() === dia;
+}
+
+// GET /api/pedidos?estado=&desde=&hasta=&q=
+// Ruta de administración: expone datos de clientes (nombre, teléfono, dirección)
+// de TODOS los pedidos, por eso requiere sesión de administrador.
+router.get('/', requireAuth, async (req, res) => {
     try {
+        const { estado, desde, hasta, q } = req.query;
+        const condiciones = [];
+        const params = [];
+
+        if (estado) {
+            if (!ESTADOS_VALIDOS.includes(estado)) {
+                return res.status(400).json({ error: `Estado inválido. Opciones: ${ESTADOS_VALIDOS.join(', ')}` });
+            }
+            condiciones.push('estado = ?');
+            params.push(estado);
+        }
+        if (desde) {
+            if (!fechaValida(desde)) return res.status(400).json({ error: 'Fecha "desde" inválida (formato AAAA-MM-DD).' });
+            condiciones.push('fecha_creacion >= ?');
+            params.push(`${desde} 00:00:00`);
+        }
+        if (hasta) {
+            if (!fechaValida(hasta)) return res.status(400).json({ error: 'Fecha "hasta" inválida (formato AAAA-MM-DD).' });
+            condiciones.push('fecha_creacion <= ?');
+            params.push(`${hasta} 23:59:59`);
+        }
+        if (q) {
+            condiciones.push('(cliente_nombre LIKE ? OR cliente_telefono LIKE ?)');
+            params.push(`%${q}%`, `%${q}%`);
+        }
+
+        const where = condiciones.length ? `WHERE ${condiciones.join(' AND ')}` : '';
         const [rows] = await db.query(
-            'SELECT * FROM pedidos ORDER BY fecha_creacion DESC'
+            `SELECT p.*, COUNT(dp.id) AS total_items
+             FROM pedidos p
+             LEFT JOIN detalle_pedidos dp ON dp.id_pedido = p.id
+             ${where}
+             GROUP BY p.id
+             ORDER BY p.fecha_creacion DESC`,
+            params
         );
         res.json(rows);
     } catch (err) {
@@ -56,6 +104,8 @@ router.get('/', async (req, res) => {
 });
 
 // GET /api/pedidos/:id  (con items)
+// Pública a propósito: es la que usa la página de confirmación de compra del
+// cliente justo después de pagar, sin que haya iniciado sesión de admin.
 router.get('/:id', async (req, res) => {
     try {
         const [[pedido]] = await db.query('SELECT * FROM pedidos WHERE id=?', [req.params.id]);
@@ -165,9 +215,8 @@ router.post('/', async (req, res) => {
 // PUT /api/pedidos/:id/estado
 router.put('/:id/estado', requireAuth, async (req, res) => {
     const { estado } = req.body;
-    const validos = ['pendiente', 'confirmado', 'enviado', 'entregado', 'cancelado'];
-    if (!validos.includes(estado)) {
-        return res.status(400).json({ error: `Estado inválido. Opciones: ${validos.join(', ')}` });
+    if (!ESTADOS_VALIDOS.includes(estado)) {
+        return res.status(400).json({ error: `Estado inválido. Opciones: ${ESTADOS_VALIDOS.join(', ')}` });
     }
     try {
         const [result] = await db.query(

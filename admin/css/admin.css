@@ -425,6 +425,112 @@ tbody tr:hover { background: #fafafa; }
     font-size: 14px;
 }
 
+/* ===== FILTROS (PEDIDOS) ===== */
+.filtros-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 14px;
+}
+.campo-filtro {
+    margin-bottom: 0;
+    min-width: 150px;
+}
+.campo-filtro-busqueda {
+    flex: 1;
+    min-width: 220px;
+}
+.filtros-acciones {
+    display: flex;
+    gap: 10px;
+}
+@media (max-width: 700px) {
+    .filtros-bar { flex-direction: column; align-items: stretch; }
+    .filtros-acciones { justify-content: flex-end; }
+}
+
+/* ===== MODAL DE DETALLE DE PEDIDO ===== */
+.modal-lg {
+    max-width: 720px;
+}
+
+.pedido-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    padding-bottom: 18px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid #eee;
+}
+.pedido-meta-etiqueta {
+    display: block;
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 3px;
+}
+
+.pedido-cliente-card {
+    background: #f9f9fb;
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 22px;
+}
+.pedido-cliente-card h3 {
+    font-size: 14px;
+    color: #1a1a2e;
+    margin-bottom: 10px;
+}
+.pedido-cliente-fila {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 14px;
+    padding: 4px 0;
+    color: #555;
+}
+.pedido-cliente-fila strong { color: #1a1a2e; text-align: right; }
+
+.pedido-seccion-titulo {
+    font-size: 14px;
+    color: #1a1a2e;
+    margin-bottom: 12px;
+}
+
+.tabla-scroll {
+    overflow-x: auto;
+    margin-bottom: 18px;
+}
+
+.pedido-total-fila {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 4px;
+    border-top: 2px solid #eee;
+    font-size: 16px;
+    margin-bottom: 22px;
+}
+.pedido-total-fila strong { color: #1a1a2e; font-size: 19px; }
+
+.pedido-cambio-estado {
+    background: #f9f9fb;
+    border-radius: 10px;
+    padding: 16px 18px;
+}
+.pedido-cambio-estado-controles {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.pedido-cambio-estado-controles select {
+    flex: 1;
+    min-width: 160px;
+    padding: 11px 14px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
 /* ===== TOAST ===== */
 #toast {
     position: fixed;
