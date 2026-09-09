@@ -31,6 +31,12 @@ function renderizarError(mensaje) {
     contenedor.innerHTML = `<p class="msg-error" style="padding:80px 20px;">${escapeHtml(mensaje)}</p>`;
 }
 
+// El producto usa tallas si CUALQUIERA de sus colores trae desglose de tallas
+// (cada color tiene su propio stock por talla, independiente de los demás).
+function usaTallas() {
+    return !!producto.colores?.some(c => c.tallas?.length);
+}
+
 function renderizarProducto() {
     const precio = parseFloat(producto.precio).toLocaleString('es-CO');
 
@@ -52,7 +58,7 @@ function renderizarProducto() {
                     <div class="selector-colores" id="selector-colores"></div>
                 </div>` : ''}
 
-                ${producto.tallas?.length ? `
+                ${usaTallas() ? `
                 <div class="selector-grupo">
                     <label>Talla</label>
                     <div class="selector-tallas" id="selector-tallas"></div>
@@ -74,7 +80,7 @@ function renderizarProducto() {
     `;
 
     if (producto.colores?.length) renderizarSelectorColores();
-    if (producto.tallas?.length) renderizarSelectorTallas();
+    if (usaTallas()) renderizarSelectorTallas();
     actualizarGaleria();
     actualizarQtyControles();
     actualizarBotonAgregar();
@@ -86,7 +92,9 @@ function renderizarProducto() {
 
 // ===== GALERÍA =====
 function actualizarGaleria() {
-    const imagenes = colorSeleccionado?.imagenes?.length ? colorSeleccionado.imagenes : [producto.imagen_url];
+    const imagenes = colorSeleccionado?.imagenes?.length
+        ? colorSeleccionado.imagenes.map(im => im.url)
+        : [producto.imagen_url];
     if (indiceImagen >= imagenes.length) indiceImagen = 0;
 
     document.getElementById('img-principal').src = imagenes[indiceImagen];
@@ -116,10 +124,14 @@ function renderizarSelectorColores() {
         btn.addEventListener('click', () => {
             colorSeleccionado = c;
             indiceImagen = 0;
+            tallaSeleccionada = null; // el stock por talla es propio de cada color
+            cantidad = 1;
             contenedorColores.querySelectorAll('.swatch').forEach(s => s.classList.remove('activo'));
             btn.classList.add('activo');
             document.getElementById('nombre-color-elegido').textContent = c.nombre;
             actualizarGaleria();
+            if (usaTallas()) renderizarSelectorTallas();
+            actualizarQtyControles();
             actualizarBotonAgregar();
         });
         contenedorColores.appendChild(btn);
@@ -128,17 +140,19 @@ function renderizarSelectorColores() {
 }
 
 // ===== TALLA =====
+// El stock por talla es propio del color elegido, no del producto en general.
 function tallaStock(talla) {
-    return producto.tallas.find(t => t.talla === talla)?.stock ?? 0;
+    return colorSeleccionado?.tallas?.find(t => t.talla === talla)?.stock ?? 0;
 }
 
 function renderizarSelectorTallas() {
     const contenedorTallas = document.getElementById('selector-tallas');
+    const tallas = colorSeleccionado?.tallas || [];
     contenedorTallas.innerHTML = '';
-    producto.tallas.forEach(t => {
+    tallas.forEach(t => {
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = 'talla-btn';
+        btn.className = 'talla-btn' + (t.talla === tallaSeleccionada ? ' activa' : '');
         btn.textContent = t.talla;
         btn.disabled = t.stock === 0;
         btn.addEventListener('click', () => {
@@ -153,9 +167,13 @@ function renderizarSelectorTallas() {
         contenedorTallas.appendChild(btn);
     });
 
-    if (producto.tallas.every(t => t.stock === 0)) {
-        document.getElementById('aviso-talla').textContent = 'Todas las tallas están agotadas por ahora.';
-        document.getElementById('aviso-talla').classList.add('bajo');
+    const aviso = document.getElementById('aviso-talla');
+    if (tallas.every(t => t.stock === 0)) {
+        aviso.textContent = `Todas las tallas de "${colorSeleccionado?.nombre || ''}" están agotadas por ahora.`;
+        aviso.classList.add('bajo');
+    } else {
+        aviso.textContent = '';
+        aviso.classList.remove('bajo');
     }
 }
 
@@ -174,7 +192,7 @@ function actualizarAvisoStock() {
 
 // ===== CANTIDAD =====
 function stockMaximoActual() {
-    if (producto.tallas?.length) return tallaSeleccionada === null ? 1 : tallaStock(tallaSeleccionada);
+    if (usaTallas()) return tallaSeleccionada === null ? 1 : tallaStock(tallaSeleccionada);
     return producto.stock ?? 1;
 }
 
@@ -195,11 +213,11 @@ function actualizarQtyControles() {
 function actualizarBotonAgregar() {
     const btn = document.getElementById('btn-agregar');
     const necesitaColor = !!producto.colores?.length;
-    const necesitaTalla = !!producto.tallas?.length;
+    const necesitaTalla = usaTallas();
 
-    if (necesitaTalla && producto.tallas.every(t => t.stock === 0)) {
+    if (necesitaTalla && (colorSeleccionado?.tallas || []).every(t => t.stock === 0)) {
         btn.disabled = true;
-        btn.textContent = 'Agotado';
+        btn.textContent = 'Agotado en este color';
         return;
     }
     if ((necesitaColor && !colorSeleccionado) || (necesitaTalla && tallaSeleccionada === null)) {
@@ -217,9 +235,10 @@ function agregarProductoAlCarrito() {
         id: producto.id,
         nombre: producto.nombre,
         precio: producto.precio,
-        imagen_url: colorSeleccionado?.imagenes?.[0] || imagenActual,
+        imagen_url: colorSeleccionado?.imagenes?.[0]?.url || imagenActual,
         talla: tallaSeleccionada,
         color: colorSeleccionado?.nombre || null,
+        id_color: colorSeleccionado?.id ?? null,
         stockDisponible: stockMaximoActual()
     }, cantidad);
 

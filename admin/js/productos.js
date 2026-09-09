@@ -71,6 +71,7 @@ function renderizarTabla() {
                             <td>${formatoMoneda(p.precio)}</td>
                             <td><span class="badge ${badge}">${stock}</span></td>
                             <td>
+                                <a class="btn-accion btn-gestionar" href="producto-detalle.html?id=${p.id}">Colores y tallas</a>
                                 <button class="btn-accion btn-editar" data-id="${p.id}">Editar</button>
                                 <button class="btn-accion btn-eliminar" data-id="${p.id}">Eliminar</button>
                             </td>
@@ -90,10 +91,15 @@ function renderizarTabla() {
 }
 
 // ===== MODAL =====
+const stockInput = document.getElementById('stock');
+const stockHint  = document.getElementById('stock-hint');
+
 function abrirModalNuevo() {
     formProducto.reset();
     document.getElementById('producto-id').value = '';
     document.getElementById('stock_minimo').value = 5;
+    stockInput.disabled = false;
+    stockHint.hidden = true;
     modalTitulo.textContent = 'Agregar producto';
     modalOverlay.hidden = false;
 }
@@ -111,6 +117,12 @@ function abrirModalEditar(id) {
     document.getElementById('stock_minimo').value = p.stock_minimo ?? 5;
     document.getElementById('imagen_url').value = p.imagen_url || '';
     document.getElementById('categoria').value = p.id_categoria || '';
+
+    // Si ya tiene colores, el stock total se calcula solo (suma de tallas por
+    // color) en "Colores y tallas": editarlo acá se perdería en el próximo guardado.
+    const tieneColores = !!p.colores?.length;
+    stockInput.disabled = tieneColores;
+    stockHint.hidden = !tieneColores;
 
     modalTitulo.textContent = 'Editar producto';
     modalOverlay.hidden = false;
@@ -145,6 +157,7 @@ formProducto.addEventListener('submit', async (e) => {
 
     try {
         let idProducto = id;
+        const esNuevo = !id;
 
         if (id) {
             await apiFetch(`/productos/${id}`, { method: 'PUT', body: JSON.stringify(datos) });
@@ -161,7 +174,14 @@ formProducto.addEventListener('submit', async (e) => {
             body: JSON.stringify({ cantidad: stock, stock_minimo: stockMinimo })
         });
 
-        mostrarToast(id ? 'Producto actualizado' : 'Producto creado');
+        if (esNuevo) {
+            // Recién creado: se pasa directo a agregar colores, imágenes y tallas.
+            mostrarToast('Producto creado. Ahora agrega sus colores y tallas.');
+            window.location.href = `producto-detalle.html?id=${idProducto}`;
+            return;
+        }
+
+        mostrarToast('Producto actualizado');
         cerrarModal();
         cargarProductos();
     } catch (err) {
@@ -186,5 +206,10 @@ async function eliminarProducto(id) {
     }
 }
 
+// Si se llega desde "Editar datos básicos" en Gestionar producto, abre el
+// modal de edición automáticamente en cuanto la tabla termina de cargar.
 cargarCategorias();
-cargarProductos();
+cargarProductos().then(() => {
+    const idEditar = new URLSearchParams(window.location.search).get('editar');
+    if (idEditar) abrirModalEditar(idEditar);
+});

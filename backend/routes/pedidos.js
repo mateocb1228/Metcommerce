@@ -31,9 +31,9 @@ function validarPedido({ cliente_nombre, cliente_telefono, cliente_direccion, it
             const cantidadValida = Number.isInteger(item?.cantidad) && item.cantidad > 0 && item.cantidad <= MAX_CANTIDAD_POR_ITEM;
             const tallaValida = item?.talla === undefined || item.talla === null ||
                 (Number.isInteger(item.talla) && item.talla >= 30 && item.talla <= 50);
-            const colorValido = item?.color === undefined || item.color === null ||
-                (typeof item.color === 'string' && item.color.length <= 50);
-            return idValido && cantidadValida && tallaValida && colorValido;
+            const idColorValido = item?.id_color === undefined || item.id_color === null ||
+                (Number.isInteger(item.id_color) && item.id_color > 0);
+            return idValido && cantidadValida && tallaValida && idColorValido;
         });
         if (!itemsValidos) {
             errores.push('Hay productos con datos inválidos en el pedido.');
@@ -125,7 +125,9 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/pedidos
-// Body: { cliente_nombre, cliente_telefono, cliente_direccion, items: [{ id_producto, cantidad }] }
+// Body: { cliente_nombre, cliente_telefono, cliente_direccion,
+//         items: [{ id_producto, cantidad, talla?, id_color? }] }
+// talla e id_color son obligatorios solo si el producto maneja tallas.
 router.post('/', async (req, res) => {
     const { cliente_nombre, cliente_telefono, cliente_direccion, items } = req.body;
 
@@ -154,23 +156,38 @@ router.post('/', async (req, res) => {
                 'SELECT talla FROM producto_tallas WHERE id_producto=?', [item.id_producto]
             );
 
+            let colorResuelto = null;
+
             if (tallasProducto.length) {
-                // Este producto maneja tallas: el stock real vive en producto_tallas,
-                // así que la talla es obligatoria y se descuenta esa fila puntual
-                // (comprar talla 40 no puede afectar la disponibilidad de la talla 42).
+                // Este producto maneja tallas con stock independiente por color:
+                // talla y color son obligatorios, y se descuenta esa combinación
+                // puntual (comprar negro talla 40 no afecta blanco talla 40). El
+                // nombre del color se resuelve acá, en el servidor, a partir del
+                // id_color — nunca se confía en un texto de color enviado por el
+                // cliente para no guardar en la orden un nombre que no corresponde.
                 if (!Number.isInteger(item.talla)) {
                     throw new Error(`Debes indicar una talla para "${producto.nombre}".`);
                 }
+                if (!Number.isInteger(item.id_color)) {
+                    throw new Error(`Debes indicar un color para "${producto.nombre}".`);
+                }
+                const [[color]] = await conn.query(
+                    'SELECT nombre FROM producto_colores WHERE id=? AND id_producto=?',
+                    [item.id_color, item.id_producto]
+                );
+                if (!color) throw new Error(`El color elegido para "${producto.nombre}" ya no está disponible.`);
+                colorResuelto = color.nombre;
+
                 const [[fila]] = await conn.query(
-                    'SELECT stock FROM producto_tallas WHERE id_producto=? AND talla=? FOR UPDATE',
-                    [item.id_producto, item.talla]
+                    'SELECT stock FROM producto_tallas WHERE id_producto=? AND id_color=? AND talla=? FOR UPDATE',
+                    [item.id_producto, item.id_color, item.talla]
                 );
                 if (!fila || fila.stock < item.cantidad) {
-                    throw new Error(`Stock insuficiente para "${producto.nombre}" talla ${item.talla}. Disponible: ${fila ? fila.stock : 0}.`);
+                    throw new Error(`Stock insuficiente para "${producto.nombre}" (${colorResuelto}, talla ${item.talla}). Disponible: ${fila ? fila.stock : 0}.`);
                 }
                 await conn.query(
-                    'UPDATE producto_tallas SET stock = stock - ? WHERE id_producto=? AND talla=?',
-                    [item.cantidad, item.id_producto, item.talla]
+                    'UPDATE producto_tallas SET stock = stock - ? WHERE id_producto=? AND id_color=? AND talla=?',
+                    [item.cantidad, item.id_producto, item.id_color, item.talla]
                 );
             } else {
                 const [[inv]] = await conn.query(
@@ -182,7 +199,7 @@ router.post('/', async (req, res) => {
             }
 
             total += producto.precio * item.cantidad;
-            itemsDetalle.push({ ...item, precio_unitario: producto.precio });
+            itemsDetalle.push({ ...item, precio_unitario: producto.precio, color: colorResuelto });
         }
 
         const [pedidoResult] = await conn.query(

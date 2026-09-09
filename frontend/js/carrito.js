@@ -5,9 +5,9 @@ const API = 'http://localhost:3000/api';
 const CARRITO_KEY = 'mc_carrito';
 
 // Cada línea del carrito es un producto+talla+color específico, no solo un
-// producto: el mismo zapato en dos tallas distintas son dos líneas.
-function claveLinea({ id, talla, color }) {
-    return `${id}__${talla}__${color}`;
+// producto: el mismo zapato en dos tallas o colores distintos son dos líneas.
+function claveLinea({ id, talla, id_color }) {
+    return `${id}__${talla}__${id_color ?? ''}`;
 }
 
 // ===== PERSISTENCIA (localStorage → sobrevive a recargar la página) =====
@@ -36,7 +36,7 @@ function vaciarCarrito() {
 }
 
 // ===== OPERACIONES SOBRE EL CARRITO =====
-// producto: { id, nombre, precio, imagen_url, talla, color, stockDisponible }
+// producto: { id, nombre, precio, imagen_url, talla, color, id_color, stockDisponible }
 function agregarAlCarrito(producto, cantidad = 1) {
     const carrito = obtenerCarrito();
     const clave = claveLinea(producto);
@@ -59,6 +59,7 @@ function agregarAlCarrito(producto, cantidad = 1) {
             imagen_url: producto.imagen_url || '',
             talla: producto.talla,
             color: producto.color,
+            id_color: producto.id_color ?? null,
             cantidad: nuevaCantidad
         });
     }

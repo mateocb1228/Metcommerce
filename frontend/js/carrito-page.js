@@ -37,6 +37,18 @@ async function iniciar() {
     mostrarAvisos(avisos);
 }
 
+// El stock por talla vive dentro de cada color (es independiente entre
+// colores), así que hay que ubicar primero el color de esta línea del carrito.
+function stockLineaCarrito(actual, item) {
+    const usaTallas = actual.colores?.some(c => c.tallas?.length);
+    if (!usaTallas) return actual.stock ?? 0;
+
+    const color = actual.colores.find(c => c.id === item.id_color);
+    if (!color) return 0; // el color de esta línea ya no existe
+    if (item.talla === null || item.talla === undefined) return actual.stock ?? 0;
+    return color.tallas.find(t => t.talla === item.talla)?.stock ?? 0;
+}
+
 async function revalidarCarrito(carrito, avisos) {
     const actualizado = [];
     for (const item of carrito) {
@@ -46,12 +58,7 @@ async function revalidarCarrito(carrito, avisos) {
             continue;
         }
 
-        let stockDisponible;
-        if (actual.tallas?.length && item.talla !== null && item.talla !== undefined) {
-            stockDisponible = actual.tallas.find(t => t.talla === item.talla)?.stock ?? 0;
-        } else {
-            stockDisponible = actual.stock ?? 0;
-        }
+        const stockDisponible = stockLineaCarrito(actual, item);
 
         if (stockDisponible === 0) {
             avisos.push(`"${item.nombre}"${item.talla ? ' talla ' + item.talla : ''} se agotó y se quitó del carrito.`);
@@ -154,9 +161,7 @@ function cambiarCantidad(clave, delta) {
     if (!item) return;
 
     const actual = productosCache[item.id];
-    const stockMax = actual?.tallas?.length
-        ? (actual.tallas.find(t => t.talla === item.talla)?.stock ?? Infinity)
-        : (actual?.stock ?? Infinity);
+    const stockMax = actual ? stockLineaCarrito(actual, item) : Infinity;
     const nuevaCantidad = item.cantidad + delta;
 
     if (nuevaCantidad > stockMax) {

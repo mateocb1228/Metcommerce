@@ -48,16 +48,20 @@ CREATE TABLE producto_imagenes (
     FOREIGN KEY (id_color) REFERENCES producto_colores(id) ON DELETE CASCADE
 );
 
--- Stock por talla (35 a 44). Es la fuente de verdad del inventario real;
--- inventario.cantidad se mantiene como el total agregado (suma de tallas)
--- para no romper el dashboard/admin existente, que consulta por producto.
+-- Stock por talla (35 a 44), independiente por color: el mismo zapato en
+-- negro y en blanco llevan cada uno su propio stock por talla. Es la fuente
+-- de verdad del inventario real; inventario.cantidad se mantiene como el
+-- total agregado (suma de todas las combinaciones color+talla) para no
+-- romper el dashboard/admin existente, que consulta por producto.
 CREATE TABLE producto_tallas (
     id           INT AUTO_INCREMENT PRIMARY KEY,
     id_producto  INT NOT NULL,
+    id_color     INT NOT NULL,
     talla        INT NOT NULL,
     stock        INT DEFAULT 0,
     FOREIGN KEY (id_producto) REFERENCES productos(id) ON DELETE CASCADE,
-    UNIQUE KEY uq_producto_talla (id_producto, talla)
+    FOREIGN KEY (id_color) REFERENCES producto_colores(id) ON DELETE CASCADE,
+    UNIQUE KEY uq_producto_color_talla (id_producto, id_color, talla)
 );
 
 CREATE TABLE inventario (
@@ -137,19 +141,16 @@ INSERT INTO producto_imagenes (id_producto, id_color, imagen_url, orden) VALUES
     (@id_prod, @id_color, 'img/productos/sneaker-urbano-hombre--azul-marino-a.svg', 0),
     (@id_prod, @id_color, 'img/productos/sneaker-urbano-hombre--azul-marino-b.svg', 1);
 
-INSERT INTO producto_tallas (id_producto, talla, stock) VALUES
-    (@id_prod, 35, 0),
-    (@id_prod, 36, 0),
-    (@id_prod, 37, 0),
-    (@id_prod, 38, 0),
-    (@id_prod, 39, 6),
-    (@id_prod, 40, 14),
-    (@id_prod, 41, 0),
-    (@id_prod, 42, 12),
-    (@id_prod, 43, 7),
-    (@id_prod, 44, 4);
+-- Cada color del producto recibe, como punto de partida, el mismo desglose
+-- por talla (el admin puede luego ajustar el stock real por color).
+INSERT INTO producto_tallas (id_producto, id_color, talla, stock)
+SELECT @id_prod, pc.id, s.talla, s.stock FROM producto_colores pc
+JOIN (SELECT 35 AS talla, 0 AS stock UNION ALL SELECT 36,0 UNION ALL SELECT 37,0 UNION ALL SELECT 38,0
+      UNION ALL SELECT 39,6 UNION ALL SELECT 40,14 UNION ALL SELECT 41,0 UNION ALL SELECT 42,12
+      UNION ALL SELECT 43,7 UNION ALL SELECT 44,4) s
+WHERE pc.id_producto = @id_prod;
 
-INSERT INTO inventario (id_producto, cantidad, stock_minimo) VALUES (@id_prod, 43, 5);
+INSERT INTO inventario (id_producto, cantidad, stock_minimo) VALUES (@id_prod, 0, 5);
 
 INSERT INTO productos (nombre, descripcion, precio, imagen_url, id_categoria) VALUES
     ('Zapato Oxford Clásico', 'Zapato formal de cuero con acabado clásico, perfecto para la oficina.', 219900, 'img/productos/oxford-clasico-hombre--cafe-a.svg', (SELECT id FROM categorias WHERE nombre='Hombre'));
@@ -168,19 +169,14 @@ INSERT INTO producto_imagenes (id_producto, id_color, imagen_url, orden) VALUES
     (@id_prod, @id_color, 'img/productos/oxford-clasico-hombre--negro-a.svg', 0),
     (@id_prod, @id_color, 'img/productos/oxford-clasico-hombre--negro-b.svg', 1);
 
-INSERT INTO producto_tallas (id_producto, talla, stock) VALUES
-    (@id_prod, 35, 0),
-    (@id_prod, 36, 0),
-    (@id_prod, 37, 0),
-    (@id_prod, 38, 0),
-    (@id_prod, 39, 4),
-    (@id_prod, 40, 9),
-    (@id_prod, 41, 11),
-    (@id_prod, 42, 8),
-    (@id_prod, 43, 5),
-    (@id_prod, 44, 0);
+INSERT INTO producto_tallas (id_producto, id_color, talla, stock)
+SELECT @id_prod, pc.id, s.talla, s.stock FROM producto_colores pc
+JOIN (SELECT 35 AS talla, 0 AS stock UNION ALL SELECT 36,0 UNION ALL SELECT 37,0 UNION ALL SELECT 38,0
+      UNION ALL SELECT 39,4 UNION ALL SELECT 40,9 UNION ALL SELECT 41,11 UNION ALL SELECT 42,8
+      UNION ALL SELECT 43,5 UNION ALL SELECT 44,0) s
+WHERE pc.id_producto = @id_prod;
 
-INSERT INTO inventario (id_producto, cantidad, stock_minimo) VALUES (@id_prod, 37, 5);
+INSERT INTO inventario (id_producto, cantidad, stock_minimo) VALUES (@id_prod, 0, 5);
 
 INSERT INTO productos (nombre, descripcion, precio, imagen_url, id_categoria) VALUES
     ('Bota Urbana Hombre', 'Bota resistente de cuero, pensada para uso diario en cualquier clima.', 259900, 'img/productos/bota-urbana-hombre--cafe-oscuro-a.svg', (SELECT id FROM categorias WHERE nombre='Hombre'));
@@ -199,19 +195,14 @@ INSERT INTO producto_imagenes (id_producto, id_color, imagen_url, orden) VALUES
     (@id_prod, @id_color, 'img/productos/bota-urbana-hombre--negro-a.svg', 0),
     (@id_prod, @id_color, 'img/productos/bota-urbana-hombre--negro-b.svg', 1);
 
-INSERT INTO producto_tallas (id_producto, talla, stock) VALUES
-    (@id_prod, 35, 0),
-    (@id_prod, 36, 0),
-    (@id_prod, 37, 0),
-    (@id_prod, 38, 3),
-    (@id_prod, 39, 7),
-    (@id_prod, 40, 10),
-    (@id_prod, 41, 9),
-    (@id_prod, 42, 6),
-    (@id_prod, 43, 4),
-    (@id_prod, 44, 2);
+INSERT INTO producto_tallas (id_producto, id_color, talla, stock)
+SELECT @id_prod, pc.id, s.talla, s.stock FROM producto_colores pc
+JOIN (SELECT 35 AS talla, 0 AS stock UNION ALL SELECT 36,0 UNION ALL SELECT 37,0 UNION ALL SELECT 38,3
+      UNION ALL SELECT 39,7 UNION ALL SELECT 40,10 UNION ALL SELECT 41,9 UNION ALL SELECT 42,6
+      UNION ALL SELECT 43,4 UNION ALL SELECT 44,2) s
+WHERE pc.id_producto = @id_prod;
 
-INSERT INTO inventario (id_producto, cantidad, stock_minimo) VALUES (@id_prod, 41, 5);
+INSERT INTO inventario (id_producto, cantidad, stock_minimo) VALUES (@id_prod, 0, 5);
 
 INSERT INTO productos (nombre, descripcion, precio, imagen_url, id_categoria) VALUES
     ('Sneaker Running Pro', 'Sneaker deportivo con amortiguación ligera, ideal para entrenar.', 229900, 'img/productos/sneaker-running-hombre--gris-a.svg', (SELECT id FROM categorias WHERE nombre='Hombre'));
@@ -235,19 +226,14 @@ INSERT INTO producto_imagenes (id_producto, id_color, imagen_url, orden) VALUES
     (@id_prod, @id_color, 'img/productos/sneaker-running-hombre--negro-a.svg', 0),
     (@id_prod, @id_color, 'img/productos/sneaker-running-hombre--negro-b.svg', 1);
 
-INSERT INTO producto_tallas (id_producto, talla, stock) VALUES
-    (@id_prod, 35, 0),
-    (@id_prod, 36, 0),
-    (@id_prod, 37, 0),
-    (@id_prod, 38, 5),
-    (@id_prod, 39, 10),
-    (@id_prod, 40, 18),
-    (@id_prod, 41, 20),
-    (@id_prod, 42, 14),
-    (@id_prod, 43, 9),
-    (@id_prod, 44, 5);
+INSERT INTO producto_tallas (id_producto, id_color, talla, stock)
+SELECT @id_prod, pc.id, s.talla, s.stock FROM producto_colores pc
+JOIN (SELECT 35 AS talla, 0 AS stock UNION ALL SELECT 36,0 UNION ALL SELECT 37,0 UNION ALL SELECT 38,5
+      UNION ALL SELECT 39,10 UNION ALL SELECT 40,18 UNION ALL SELECT 41,20 UNION ALL SELECT 42,14
+      UNION ALL SELECT 43,9 UNION ALL SELECT 44,5) s
+WHERE pc.id_producto = @id_prod;
 
-INSERT INTO inventario (id_producto, cantidad, stock_minimo) VALUES (@id_prod, 81, 5);
+INSERT INTO inventario (id_producto, cantidad, stock_minimo) VALUES (@id_prod, 0, 5);
 
 INSERT INTO productos (nombre, descripcion, precio, imagen_url, id_categoria) VALUES
     ('Tacón Elegante Mujer', 'Tacón elegante de tiras finas, perfecto para ocasiones especiales.', 209900, 'img/productos/tacon-elegante-mujer--negro-a.svg', (SELECT id FROM categorias WHERE nombre='Mujer'));
@@ -271,19 +257,14 @@ INSERT INTO producto_imagenes (id_producto, id_color, imagen_url, orden) VALUES
     (@id_prod, @id_color, 'img/productos/tacon-elegante-mujer--rojo-a.svg', 0),
     (@id_prod, @id_color, 'img/productos/tacon-elegante-mujer--rojo-b.svg', 1);
 
-INSERT INTO producto_tallas (id_producto, talla, stock) VALUES
-    (@id_prod, 35, 5),
-    (@id_prod, 36, 9),
-    (@id_prod, 37, 12),
-    (@id_prod, 38, 10),
-    (@id_prod, 39, 6),
-    (@id_prod, 40, 0),
-    (@id_prod, 41, 0),
-    (@id_prod, 42, 0),
-    (@id_prod, 43, 0),
-    (@id_prod, 44, 0);
+INSERT INTO producto_tallas (id_producto, id_color, talla, stock)
+SELECT @id_prod, pc.id, s.talla, s.stock FROM producto_colores pc
+JOIN (SELECT 35 AS talla, 5 AS stock UNION ALL SELECT 36,9 UNION ALL SELECT 37,12 UNION ALL SELECT 38,10
+      UNION ALL SELECT 39,6 UNION ALL SELECT 40,0 UNION ALL SELECT 41,0 UNION ALL SELECT 42,0
+      UNION ALL SELECT 43,0 UNION ALL SELECT 44,0) s
+WHERE pc.id_producto = @id_prod;
 
-INSERT INTO inventario (id_producto, cantidad, stock_minimo) VALUES (@id_prod, 42, 5);
+INSERT INTO inventario (id_producto, cantidad, stock_minimo) VALUES (@id_prod, 0, 5);
 
 INSERT INTO productos (nombre, descripcion, precio, imagen_url, id_categoria) VALUES
     ('Flat Casual Mujer', 'Flat cómodo y versátil, ideal para el uso diario.', 149900, 'img/productos/flat-casual-mujer--blanco-a.svg', (SELECT id FROM categorias WHERE nombre='Mujer'));
@@ -307,19 +288,14 @@ INSERT INTO producto_imagenes (id_producto, id_color, imagen_url, orden) VALUES
     (@id_prod, @id_color, 'img/productos/flat-casual-mujer--negro-a.svg', 0),
     (@id_prod, @id_color, 'img/productos/flat-casual-mujer--negro-b.svg', 1);
 
-INSERT INTO producto_tallas (id_producto, talla, stock) VALUES
-    (@id_prod, 35, 8),
-    (@id_prod, 36, 0),
-    (@id_prod, 37, 15),
-    (@id_prod, 38, 11),
-    (@id_prod, 39, 7),
-    (@id_prod, 40, 3),
-    (@id_prod, 41, 0),
-    (@id_prod, 42, 0),
-    (@id_prod, 43, 0),
-    (@id_prod, 44, 0);
+INSERT INTO producto_tallas (id_producto, id_color, talla, stock)
+SELECT @id_prod, pc.id, s.talla, s.stock FROM producto_colores pc
+JOIN (SELECT 35 AS talla, 8 AS stock UNION ALL SELECT 36,0 UNION ALL SELECT 37,15 UNION ALL SELECT 38,11
+      UNION ALL SELECT 39,7 UNION ALL SELECT 40,3 UNION ALL SELECT 41,0 UNION ALL SELECT 42,0
+      UNION ALL SELECT 43,0 UNION ALL SELECT 44,0) s
+WHERE pc.id_producto = @id_prod;
 
-INSERT INTO inventario (id_producto, cantidad, stock_minimo) VALUES (@id_prod, 44, 5);
+INSERT INTO inventario (id_producto, cantidad, stock_minimo) VALUES (@id_prod, 0, 5);
 
 INSERT INTO productos (nombre, descripcion, precio, imagen_url, id_categoria) VALUES
     ('Sandalia Verano Mujer', 'Sandalia ligera de tiras cruzadas, perfecta para el verano.', 129900, 'img/productos/sandalia-verano-mujer--dorado-a.svg', (SELECT id FROM categorias WHERE nombre='Mujer'));
@@ -338,19 +314,14 @@ INSERT INTO producto_imagenes (id_producto, id_color, imagen_url, orden) VALUES
     (@id_prod, @id_color, 'img/productos/sandalia-verano-mujer--blanco-a.svg', 0),
     (@id_prod, @id_color, 'img/productos/sandalia-verano-mujer--blanco-b.svg', 1);
 
-INSERT INTO producto_tallas (id_producto, talla, stock) VALUES
-    (@id_prod, 35, 6),
-    (@id_prod, 36, 10),
-    (@id_prod, 37, 14),
-    (@id_prod, 38, 12),
-    (@id_prod, 39, 8),
-    (@id_prod, 40, 4),
-    (@id_prod, 41, 0),
-    (@id_prod, 42, 0),
-    (@id_prod, 43, 0),
-    (@id_prod, 44, 0);
+INSERT INTO producto_tallas (id_producto, id_color, talla, stock)
+SELECT @id_prod, pc.id, s.talla, s.stock FROM producto_colores pc
+JOIN (SELECT 35 AS talla, 6 AS stock UNION ALL SELECT 36,10 UNION ALL SELECT 37,14 UNION ALL SELECT 38,12
+      UNION ALL SELECT 39,8 UNION ALL SELECT 40,4 UNION ALL SELECT 41,0 UNION ALL SELECT 42,0
+      UNION ALL SELECT 43,0 UNION ALL SELECT 44,0) s
+WHERE pc.id_producto = @id_prod;
 
-INSERT INTO inventario (id_producto, cantidad, stock_minimo) VALUES (@id_prod, 54, 5);
+INSERT INTO inventario (id_producto, cantidad, stock_minimo) VALUES (@id_prod, 0, 5);
 
 INSERT INTO productos (nombre, descripcion, precio, imagen_url, id_categoria) VALUES
     ('Sneaker Urbano Mujer', 'Sneaker urbano y liviano que combina estilo y comodidad.', 179900, 'img/productos/sneaker-urbano-mujer--blanco-a.svg', (SELECT id FROM categorias WHERE nombre='Mujer'));
@@ -374,16 +345,19 @@ INSERT INTO producto_imagenes (id_producto, id_color, imagen_url, orden) VALUES
     (@id_prod, @id_color, 'img/productos/sneaker-urbano-mujer--negro-a.svg', 0),
     (@id_prod, @id_color, 'img/productos/sneaker-urbano-mujer--negro-b.svg', 1);
 
-INSERT INTO producto_tallas (id_producto, talla, stock) VALUES
-    (@id_prod, 35, 4),
-    (@id_prod, 36, 9),
-    (@id_prod, 37, 13),
-    (@id_prod, 38, 16),
-    (@id_prod, 39, 11),
-    (@id_prod, 40, 6),
-    (@id_prod, 41, 0),
-    (@id_prod, 42, 0),
-    (@id_prod, 43, 0),
-    (@id_prod, 44, 0);
+INSERT INTO producto_tallas (id_producto, id_color, talla, stock)
+SELECT @id_prod, pc.id, s.talla, s.stock FROM producto_colores pc
+JOIN (SELECT 35 AS talla, 4 AS stock UNION ALL SELECT 36,9 UNION ALL SELECT 37,13 UNION ALL SELECT 38,16
+      UNION ALL SELECT 39,11 UNION ALL SELECT 40,6 UNION ALL SELECT 41,0 UNION ALL SELECT 42,0
+      UNION ALL SELECT 43,0 UNION ALL SELECT 44,0) s
+WHERE pc.id_producto = @id_prod;
 
-INSERT INTO inventario (id_producto, cantidad, stock_minimo) VALUES (@id_prod, 59, 5);
+INSERT INTO inventario (id_producto, cantidad, stock_minimo) VALUES (@id_prod, 0, 5);
+
+-- inventario.cantidad es el total agregado por producto (suma de todas las
+-- combinaciones color+talla); se recalcula una sola vez al final en vez de
+-- escribirlo a mano arriba, para no desincronizarlo por error de aritmética.
+UPDATE inventario i
+JOIN (SELECT id_producto, SUM(stock) AS total FROM producto_tallas GROUP BY id_producto) t
+  ON t.id_producto = i.id_producto
+SET i.cantidad = t.total;

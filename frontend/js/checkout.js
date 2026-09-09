@@ -94,7 +94,7 @@ form.addEventListener('submit', async (e) => {
             id_producto: item.id,
             cantidad: item.cantidad,
             talla: item.talla ?? null,
-            color: item.color ?? null
+            id_color: item.id_color ?? null
         }))
     };
 

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestionar producto — MetCommerce Admin</title>
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+    <div class="admin-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo">Met<span>Commerce</span></div>
+            <ul class="sidebar-nav">
+                <li><a href="dashboard.html">📊 Dashboard</a></li>
+                <li><a href="productos.html" class="activo">📦 Productos</a></li>
+                <li><a href="pedidos.html">🛒 Pedidos</a></li>
+            </ul>
+            <div class="sidebar-footer">
+                <button class="btn-logout" id="btn-logout">Cerrar sesión</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="topbar">
+                <div>
+                    <a href="productos.html" class="enlace-volver">← Volver a productos</a>
+                    <h1 id="titulo-producto">Gestionar producto</h1>
+                </div>
+                <div class="usuario-info">Hola, <strong id="nombre-usuario">—</strong></div>
+            </div>
+
+            <div id="contenido-producto"><p class="msg-cargando">Cargando producto...</p></div>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/producto-detalle.js"></script>
+</body>
+</html>

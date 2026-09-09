@@ -55,6 +55,29 @@ async function apiFetch(path, options = {}) {
     return data;
 }
 
+// Fetch para subir archivos (multipart/form-data). No fuerza Content-Type:
+// el navegador tiene que fijar el boundary del multipart automáticamente.
+async function apiUpload(path, formData) {
+    const headers = {};
+    const token = obtenerToken();
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch(`${API_BASE}${path}`, { method: 'POST', body: formData, headers });
+
+    if (res.status === 401) {
+        cerrarSesion();
+        throw new Error('Sesión expirada');
+    }
+
+    let data = null;
+    try { data = await res.json(); } catch { /* respuesta sin cuerpo */ }
+
+    if (!res.ok) {
+        throw new Error(data?.error || `Error del servidor (${res.status})`);
+    }
+    return data;
+}
+
 function mostrarToast(mensaje, esError = false) {
     let toast = document.getElementById('toast');
     if (!toast) {
