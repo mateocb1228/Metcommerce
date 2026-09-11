@@ -1,0 +1,8 @@
+{
+  "name": "metcommerce-frontend-root",
+  "private": true,
+  "scripts": {
+    "postinstall": "npm install --prefix static-server",
+    "start": "node static-server/server.js"
+  }
+}
