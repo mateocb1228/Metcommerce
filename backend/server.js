@@ -12,7 +12,9 @@ const dashboardRouter  = require('./routes/dashboard');
 const categoriasRouter = require('./routes/categorias');
 
 const app = express();
-app.use(cors());
+// FRONTEND_URL restringe CORS al dominio de la tienda/admin en producción;
+// sin definirla (desarrollo local) acepta cualquier origen.
+app.use(cors(process.env.FRONTEND_URL ? { origin: process.env.FRONTEND_URL } : {}));
 app.use(express.json());
 
 // Imágenes subidas desde el panel admin (colores de producto, imagen principal).

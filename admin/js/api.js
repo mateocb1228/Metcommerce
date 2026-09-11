@@ -1,4 +1,8 @@
-const API_BASE = 'http://localhost:3000/api';
+// En local usa el backend en localhost:3000; en producción, el backend
+// desplegado en Railway (reemplaza la URL al desplegar).
+const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+    ? 'http://localhost:3000/api'
+    : 'https://metcommerce-production.up.railway.app/api';
 const TOKEN_KEY   = 'mc_admin_token';
 const USUARIO_KEY = 'mc_admin_usuario';
 
