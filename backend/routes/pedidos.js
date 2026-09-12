@@ -1,4 +1,5 @@
 const router = require('express').Router();
+const crypto = require('crypto');
 const db     = require('../config/db');
 const { requireAuth } = require('../middleware/auth');
 const { crearLimitador } = require('../middleware/rateLimit');
@@ -55,6 +56,24 @@ function validarPedido({ cliente_nombre, cliente_telefono, cliente_direccion, it
 
 const ESTADOS_VALIDOS = ['pendiente', 'confirmado', 'enviado', 'entregado', 'cancelado'];
 const REGEX_FECHA = /^\d{4}-\d{2}-\d{2}$/;
+const REGEX_UUID  = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Trae un pedido con sus items. No filtra por permisos: cada ruta decide
+// cómo se identifica el pedido (por id numérico solo para admin, por token
+// para el cliente) antes de llamar esto.
+async function cargarPedidoConItems(idPedido) {
+    const [[pedido]] = await db.query('SELECT * FROM pedidos WHERE id=?', [idPedido]);
+    if (!pedido) return null;
+
+    const [items] = await db.query(`
+        SELECT dp.*, p.nombre, p.imagen_url
+        FROM detalle_pedidos dp
+        JOIN productos p ON dp.id_producto = p.id
+        WHERE dp.id_pedido = ?
+    `, [idPedido]);
+
+    return { ...pedido, items };
+}
 
 // No basta con el formato: "2026-13-40" cumple la regex pero no es una fecha
 // real, y MySQL no la rechaza igual que a un ENUM inválido (según el modo
@@ -113,22 +132,35 @@ router.get('/', requireAuth, async (req, res) => {
     }
 });
 
-// GET /api/pedidos/:id  (con items)
+// GET /api/pedidos/token/:token  (con items)
 // Pública a propósito: es la que usa la página de confirmación de compra del
-// cliente justo después de pagar, sin que haya iniciado sesión de admin.
-router.get('/:id', async (req, res) => {
+// cliente justo después de pagar, sin que haya iniciado sesión de admin. Se
+// identifica por un token aleatorio (no por el id numérico) para que nadie
+// pueda enumerar pedidos ajenos probando ids consecutivos.
+router.get('/token/:token', async (req, res) => {
+    if (!REGEX_UUID.test(req.params.token)) {
+        return res.status(404).json({ error: 'Pedido no encontrado' });
+    }
     try {
-        const [[pedido]] = await db.query('SELECT * FROM pedidos WHERE id=?', [req.params.id]);
+        const [[fila]] = await db.query('SELECT id FROM pedidos WHERE token=?', [req.params.token]);
+        if (!fila) return res.status(404).json({ error: 'Pedido no encontrado' });
+
+        const pedido = await cargarPedidoConItems(fila.id);
+        res.json(pedido);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET /api/pedidos/:id  (con items)
+// Ruta de administración: identifica el pedido por su id numérico, que es
+// predecible/enumerable — por eso requiere sesión de administrador. El
+// cliente usa la ruta pública por token en su lugar.
+router.get('/:id', requireAuth, async (req, res) => {
+    try {
+        const pedido = await cargarPedidoConItems(req.params.id);
         if (!pedido) return res.status(404).json({ error: 'Pedido no encontrado' });
-
-        const [items] = await db.query(`
-            SELECT dp.*, p.nombre, p.imagen_url
-            FROM detalle_pedidos dp
-            JOIN productos p ON dp.id_producto = p.id
-            WHERE dp.id_pedido = ?
-        `, [req.params.id]);
-
-        res.json({ ...pedido, items });
+        res.json(pedido);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -212,9 +244,13 @@ router.post('/', limitarCreacionPedidos, async (req, res) => {
             itemsDetalle.push({ ...item, precio_unitario: producto.precio, color: colorResuelto });
         }
 
+        // El token (no el id numérico, que es predecible) es lo que se le
+        // entrega al cliente para poder consultar después su propio pedido
+        // sin sesión, sin exponer los pedidos de los demás.
+        const token = crypto.randomUUID();
         const [pedidoResult] = await conn.query(
-            'INSERT INTO pedidos (cliente_nombre, cliente_telefono, cliente_direccion, total) VALUES (?, ?, ?, ?)',
-            [cliente_nombre.trim(), cliente_telefono.trim(), cliente_direccion.trim(), total]
+            'INSERT INTO pedidos (cliente_nombre, cliente_telefono, cliente_direccion, total, token) VALUES (?, ?, ?, ?, ?)',
+            [cliente_nombre.trim(), cliente_telefono.trim(), cliente_direccion.trim(), total, token]
         );
         const id_pedido = pedidoResult.insertId;
 
@@ -230,7 +266,7 @@ router.post('/', limitarCreacionPedidos, async (req, res) => {
         }
 
         await conn.commit();
-        res.status(201).json({ id: id_pedido, total, mensaje: 'Pedido creado' });
+        res.status(201).json({ id: id_pedido, token, total, mensaje: 'Pedido creado' });
     } catch (err) {
         await conn.rollback();
         res.status(400).json({ error: err.message });

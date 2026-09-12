@@ -114,7 +114,7 @@ form.addEventListener('submit', async (e) => {
         }
 
         vaciarCarrito();
-        window.location.href = `confirmacion.html?id=${data.id}`;
+        window.location.href = `confirmacion.html?token=${encodeURIComponent(data.token)}`;
     } catch (err) {
         if (err instanceof TypeError) {
             // fetch lanza TypeError cuando el servidor no responde (caído, sin red, CORS)

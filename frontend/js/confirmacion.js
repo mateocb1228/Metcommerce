@@ -1,16 +1,17 @@
 const contenido = document.getElementById('contenido-confirmacion');
+const REGEX_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 async function cargarPedido() {
     const params = new URLSearchParams(window.location.search);
-    const id = params.get('id');
+    const token = params.get('token');
 
-    if (!id || !/^\d+$/.test(id)) {
+    if (!token || !REGEX_UUID.test(token)) {
         renderizarError('No encontramos ese pedido.');
         return;
     }
 
     try {
-        const res = await fetch(`${API}/pedidos/${id}`);
+        const res = await fetch(`${API}/pedidos/token/${encodeURIComponent(token)}`);
 
         if (res.status === 404) {
             renderizarError('No encontramos ese pedido. Puede que el enlace sea incorrecto.');

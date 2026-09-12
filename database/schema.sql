@@ -75,6 +75,11 @@ CREATE TABLE inventario (
 
 CREATE TABLE pedidos (
     id                INT AUTO_INCREMENT PRIMARY KEY,
+    -- Token aleatorio (UUID) que se le entrega al cliente para consultar su
+    -- propio pedido sin sesión (página de confirmación). El id numérico es
+    -- predecible/enumerable, así que la ruta pública nunca lo usa como
+    -- identificador; solo el panel de administración lo hace, con sesión.
+    token             CHAR(36)      NOT NULL UNIQUE,
     cliente_nombre    VARCHAR(200)  NOT NULL,
     cliente_telefono  VARCHAR(20),
     cliente_direccion VARCHAR(255),
