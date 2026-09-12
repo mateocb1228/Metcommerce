@@ -1,6 +1,16 @@
 const router = require('express').Router();
 const db     = require('../config/db');
 const { requireAuth } = require('../middleware/auth');
+const { crearLimitador } = require('../middleware/rateLimit');
+
+// Protección contra scripts que automaticen la creación de pedidos: cada uno
+// descuenta stock real, así que sin límite alguien podría vaciar el
+// inventario de un producto sin pasar por una compra legítima.
+const limitarCreacionPedidos = crearLimitador({
+    ventanaMs: 10 * 60 * 1000, // 10 minutos
+    maxSolicitudes: 5,
+    mensaje: 'Demasiados pedidos creados desde esta conexión. Intenta de nuevo en unos minutos.'
+});
 
 const MAX_ITEMS = 50;
 const MAX_CANTIDAD_POR_ITEM = 50;
@@ -128,7 +138,7 @@ router.get('/:id', async (req, res) => {
 // Body: { cliente_nombre, cliente_telefono, cliente_direccion,
 //         items: [{ id_producto, cantidad, talla?, id_color? }] }
 // talla e id_color son obligatorios solo si el producto maneja tallas.
-router.post('/', async (req, res) => {
+router.post('/', limitarCreacionPedidos, async (req, res) => {
     const { cliente_nombre, cliente_telefono, cliente_direccion, items } = req.body;
 
     const errores = validarPedido({ cliente_nombre, cliente_telefono, cliente_direccion, items });
