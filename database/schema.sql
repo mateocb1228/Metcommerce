@@ -24,7 +24,10 @@ CREATE TABLE productos (
     id_categoria   INT,
     activo         TINYINT(1)      DEFAULT 1,
     fecha_creacion TIMESTAMP       DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (id_categoria) REFERENCES categorias(id) ON DELETE SET NULL
+    FOREIGN KEY (id_categoria) REFERENCES categorias(id) ON DELETE SET NULL,
+    -- Cubre el listado del catálogo (GET /api/productos), que siempre filtra
+    -- por activo=1 y ordena por nombre.
+    INDEX idx_productos_activo_nombre (activo, nombre)
 );
 
 -- Colores disponibles por producto (cada uno con su propio swatch)
@@ -45,7 +48,10 @@ CREATE TABLE producto_imagenes (
     imagen_url   VARCHAR(500) NOT NULL,
     orden        INT DEFAULT 0,
     FOREIGN KEY (id_producto) REFERENCES productos(id) ON DELETE CASCADE,
-    FOREIGN KEY (id_color) REFERENCES producto_colores(id) ON DELETE CASCADE
+    FOREIGN KEY (id_color) REFERENCES producto_colores(id) ON DELETE CASCADE,
+    -- Cubre la búsqueda de la portada de cada color (WHERE orden=0 AND
+    -- id_producto IN (...)) que hace el listado del catálogo.
+    INDEX idx_producto_imagenes_producto_orden (id_producto, orden)
 );
 
 -- Stock por talla (35 a 44), independiente por color: el mismo zapato en
@@ -85,7 +91,12 @@ CREATE TABLE pedidos (
     cliente_direccion VARCHAR(255),
     total             DECIMAL(12,2) NOT NULL,
     estado            ENUM('pendiente','confirmado','enviado','entregado','cancelado') DEFAULT 'pendiente',
-    fecha_creacion    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    fecha_creacion    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    -- estado: filtro del panel de admin (?estado=) y conteos del dashboard.
+    -- fecha_creacion: orden por defecto del listado de pedidos y filtro por
+    -- rango de fechas (?desde=&hasta=).
+    INDEX idx_pedidos_estado (estado),
+    INDEX idx_pedidos_fecha_creacion (fecha_creacion)
 );
 
 CREATE TABLE detalle_pedidos (
