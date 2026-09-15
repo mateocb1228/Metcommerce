@@ -1,7 +1,9 @@
-const express = require('express');
-const cors    = require('cors');
-const path    = require('path');
-const multer  = require('multer');
+const express     = require('express');
+const cors        = require('cors');
+const path        = require('path');
+const multer      = require('multer');
+const helmet      = require('helmet');
+const compression = require('compression');
 require('dotenv').config();
 
 const productosRouter  = require('./routes/productos');
@@ -16,6 +18,10 @@ const app = express();
 // req.ip devolvería siempre la IP del proxy y el rate-limit por IP trataría
 // a todos los clientes como uno solo.
 app.set('trust proxy', 1);
+// crossOriginResourcePolicy en "cross-origin" porque /uploads sirve imágenes
+// a frontend/admin alojados en un dominio distinto al de esta API.
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+app.use(compression());
 // FRONTEND_URL restringe CORS al dominio de la tienda/admin en producción;
 // sin definirla (desarrollo local) acepta cualquier origen.
 app.use(cors(process.env.FRONTEND_URL ? { origin: process.env.FRONTEND_URL } : {}));
