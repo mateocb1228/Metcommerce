@@ -114,6 +114,21 @@ form.addEventListener('submit', async (e) => {
         }
 
         vaciarCarrito();
+
+        // El pedido ya se creó (y descontó stock); ahora se genera el link de
+        // pago de MercadoPago para ese pedido puntual y se redirige ahí. Si
+        // MercadoPago no está configurado en el servidor, se avisa pero igual
+        // se manda a la confirmación (el pedido quedó registrado como
+        // "pendiente" y se puede cobrar por otro medio).
+        try {
+            const resPago = await fetch(`${API}/pagos/preferencia/${encodeURIComponent(data.token)}`, { method: 'POST' });
+            const datosPago = await resPago.json();
+            if (resPago.ok && datosPago.checkout_url) {
+                window.location.href = datosPago.checkout_url;
+                return;
+            }
+        } catch { /* sigue a la confirmación sin link de pago */ }
+
         window.location.href = `confirmacion.html?token=${encodeURIComponent(data.token)}`;
     } catch (err) {
         if (err instanceof TypeError) {

@@ -4,10 +4,21 @@ const REGEX_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 async function cargarPedido() {
     const params = new URLSearchParams(window.location.search);
     const token = params.get('token');
+    // MercadoPago agrega payment_id (y status) a la URL al redirigir de
+    // vuelta desde el checkout. Se usa para confirmar el pago contra la API
+    // de MercadoPago antes de mostrar el pedido, porque en desarrollo local
+    // el webhook no puede alcanzar este servidor.
+    const paymentId = params.get('payment_id') || params.get('collection_id');
 
     if (!token || !REGEX_UUID.test(token)) {
         renderizarError('No encontramos ese pedido.');
         return;
+    }
+
+    if (paymentId) {
+        try {
+            await fetch(`${API}/pagos/confirmar?token=${encodeURIComponent(token)}&payment_id=${encodeURIComponent(paymentId)}`);
+        } catch { /* si falla, igual se muestra el pedido con su estado actual */ }
     }
 
     try {
@@ -40,11 +51,21 @@ function renderizarError(mensaje) {
     `;
 }
 
+const ESTADO_PAGO_UI = {
+    confirmado: { icono: '✅', titulo: '¡Pago aprobado!' },
+    pendiente:  { icono: '⏳', titulo: 'Pago pendiente', mensaje: 'Todavía no se confirmó el pago. Si pagaste, puede tardar unos minutos en reflejarse.' },
+    cancelado:  { icono: '❌', titulo: 'El pago no se pudo procesar', mensaje: 'El pedido quedó registrado pero el pago fue rechazado o cancelado.' },
+    enviado:    { icono: '✅', titulo: '¡Pedido confirmado!' },
+    entregado:  { icono: '✅', titulo: '¡Pedido confirmado!' }
+};
+
 function renderizarPedido(pedido) {
+    const ui = ESTADO_PAGO_UI[pedido.estado] || ESTADO_PAGO_UI.pendiente;
     contenido.innerHTML = `
         <div class="confirmacion-card">
-            <div class="confirmacion-icono">✅</div>
-            <h1>¡Pedido confirmado!</h1>
+            <div class="confirmacion-icono">${ui.icono}</div>
+            <h1>${ui.titulo}</h1>
+            ${ui.mensaje ? `<p class="confirmacion-numero">${escapeHtml(ui.mensaje)}</p>` : ''}
             <p class="confirmacion-numero">Número de pedido <strong>#${pedido.id}</strong> — ${escapeHtml(formatoFecha(pedido.fecha_creacion))}</p>
 
             <div class="detalle-pedido">

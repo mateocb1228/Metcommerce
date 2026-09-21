@@ -12,6 +12,7 @@ const inventarioRouter = require('./routes/inventario');
 const authRouter       = require('./routes/auth');
 const dashboardRouter  = require('./routes/dashboard');
 const categoriasRouter = require('./routes/categorias');
+const pagosRouter      = require('./routes/pagos');
 
 const app = express();
 // Railway (y la mayoría de PaaS) coloca la app detrás de un proxy: sin esto,
@@ -36,6 +37,7 @@ app.use('/api/categorias', categoriasRouter);
 app.use('/api/productos',  productosRouter);
 app.use('/api/pedidos',    pedidosRouter);
 app.use('/api/inventario', inventarioRouter);
+app.use('/api/pagos',      pagosRouter);
 
 app.get('/', (req, res) => {
     res.json({ api: 'MetCommerce', version: '1.0', estado: 'activo' });

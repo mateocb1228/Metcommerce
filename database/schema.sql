@@ -91,6 +91,12 @@ CREATE TABLE pedidos (
     cliente_direccion VARCHAR(255),
     total             DECIMAL(12,2) NOT NULL,
     estado            ENUM('pendiente','confirmado','enviado','entregado','cancelado') DEFAULT 'pendiente',
+    -- id de la preferencia de MercadoPago (Checkout Pro) creada para este
+    -- pedido, y el id del pago que el webhook confirmó contra ella. Sin el
+    -- segundo no hay forma de distinguir "aún no pagaron" de "ya se procesó
+    -- esta notificación" si MercadoPago la reenvía.
+    mp_preference_id  VARCHAR(50),
+    mp_payment_id     VARCHAR(50),
     fecha_creacion    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     -- estado: filtro del panel de admin (?estado=) y conteos del dashboard.
     -- fecha_creacion: orden por defecto del listado de pedidos y filtro por
