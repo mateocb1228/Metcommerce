@@ -23,9 +23,13 @@ app.set('trust proxy', 1);
 // a frontend/admin alojados en un dominio distinto al de esta API.
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(compression());
-// FRONTEND_URL restringe CORS al dominio de la tienda/admin en producción;
-// sin definirla (desarrollo local) acepta cualquier origen.
-app.use(cors(process.env.FRONTEND_URL ? { origin: process.env.FRONTEND_URL } : {}));
+// FRONTEND_URL restringe CORS a los dominios de la tienda y el admin en
+// producción (lista separada por comas, ya que viven en subdominios
+// distintos); sin definirla (desarrollo local) acepta cualquier origen.
+const origenesPermitidos = process.env.FRONTEND_URL
+    ? process.env.FRONTEND_URL.split(',').map(url => url.trim())
+    : null;
+app.use(cors(origenesPermitidos ? { origin: origenesPermitidos } : {}));
 app.use(express.json());
 
 // Imágenes subidas desde el panel admin (colores de producto, imagen principal).

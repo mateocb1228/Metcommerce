@@ -1,8 +1,8 @@
 // En local usa el backend en localhost:3000; en producción, el backend
-// desplegado en Railway (reemplaza la URL al desplegar).
+// desplegado en Hostinger.
 const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
     ? 'http://localhost:3000/api'
-    : 'https://metcommerce-production.up.railway.app/api';
+    : 'https://api.tennix-shop.com/api';
 const TOKEN_KEY   = 'mc_admin_token';
 const USUARIO_KEY = 'mc_admin_usuario';
 

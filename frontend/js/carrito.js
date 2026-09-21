@@ -2,10 +2,10 @@
 // el script propio de cada una.
 
 // En local usa el backend en localhost:3000; en producción, el backend
-// desplegado en Railway (reemplaza la URL al desplegar).
+// desplegado en Hostinger.
 const API = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
     ? 'http://localhost:3000/api'
-    : 'https://metcommerce-production.up.railway.app/api';
+    : 'https://api.tennix-shop.com/api';
 const CARRITO_KEY = 'mc_carrito';
 
 // Cada línea del carrito es un producto+talla+color específico, no solo un
